@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include chem_intercompany *.css
+recursive-include chem_intercompany *.csv
+recursive-include chem_intercompany *.html
+recursive-include chem_intercompany *.ico
+recursive-include chem_intercompany *.js
+recursive-include chem_intercompany *.json
+recursive-include chem_intercompany *.md
+recursive-include chem_intercompany *.png
+recursive-include chem_intercompany *.py
+recursive-include chem_intercompany *.svg
+recursive-include chem_intercompany *.txt
+recursive-exclude chem_intercompany *.pyc
