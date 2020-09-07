@@ -12,6 +12,12 @@ from frappe.model.mapper import get_mapped_doc
 def on_submit(self, method):
 	create_sales_order(self)
 
+def on_cancel(self, method):
+	cancel_sales_order(self)
+
+def on_trash(self, method):
+	delete_sales_order(self)
+
 def create_sales_order(self):
 	def get_sales_order_entry(source_name, target_doc=None, ignore_permissions= True):
 		def set_missing_value(source, target):
@@ -127,3 +133,24 @@ def create_sales_order(self):
 
 			url = get_url_to_form("Sales Order", so.name)
 			frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=so.name)), title="Sales Order Created", indicator="green")
+
+def cancel_sales_order(self):
+	if self.so_ref:
+		so = frappe.get_doc("Sales Order", self.so_ref)
+		so.flags.ignore_permissions = True
+		if so.docstatus == 1:
+			so.cancel()
+
+		url = get_url_to_form("Sales Order", so.name)
+		frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=so.name)), title="Sales Order Cancelled", indicator="red")
+
+def delete_sales_order(self):
+	if self.so_ref:
+		frappe.db.set_value("Purchase Order", self.name, 'inter_company_order_reference', '')
+		frappe.db.set_value("Purchase Order", self.name, 'so_ref', '')
+
+		frappe.db.set_value("Sales Order", self.so_ref, 'po_ref', '')
+
+		if frappe.db.exists("Sales Order", self.so_ref):
+			frappe.delete_doc("Sales Order", self.so_ref, force = 1, ignore_permissions=True)
+			frappe.msgprint(_("Sales Order <b>{name}</b> has been deleted!".format(name=self.so_ref)), title="Sales Order Deleted", indicator="red")

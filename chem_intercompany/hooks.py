@@ -30,10 +30,42 @@ app_license = "GPL 3.0"
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
+
+doctype_js = {
+	"Delivery Note": "public/js/doctype_js/delivery_note.js",
+	"Purchase Receipt": "public/js/doctype_js/purchase_receipt.js",
+	"Sales Invoice": "public/js/doctype_js/sales_invoice.js",
+	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",	
+	"Purchase Order": "public/js/doctype_js/purchase_order.js",	
+	"Sales Order": "public/js/doctype_js/sales_order.js",
+	"Stock Entry": "public/js/doctype_js/stock_entry.js",
+	"Company": "public/js/doctype_js/company.js",
+}
+
 doc_events = {
 	"Purchase Order":{
 		"on_submit": "chem_intercompany.chem_intercompany.doc_events.purchase_order.on_submit",
+		"on_cancel": "chem_intercompany.chem_intercompany.doc_events.purchase_order.on_cancel",
+		"on_trash": "chem_intercompany.chem_intercompany.doc_events.purchase_order.on_trash",
+
 	},
+	"Company": {
+		"on_update": "chem_intercompany.chem_intercompany.doc_events.company.on_update",
+	},
+	"Delivery Note": {
+		"on_submit": "chem_intercompany.chem_intercompany.doc_events.delivery_note.on_submit",
+		"on_cancel": "chem_intercompany.chem_intercompany.doc_events.delivery_note.on_cancel",
+		"on_trash": "chem_intercompany.chem_intercompany.doc_events.delivery_note.on_trash",
+	},
+	"Sales Invoice": {
+		"on_submit": "chem_intercompany.chem_intercompany.doc_events.sales_invoice.on_submit",
+		"on_cancel": "chem_intercompany.chem_intercompany.doc_events.sales_invoice.on_cancel",
+		"on_trash": "chem_intercompany.chem_intercompany.doc_events.sales_invoice.on_trash",
+	},
+	"Stock Entry":{
+		"on_submit": "chem_intercompany.chem_intercompany.doc_events.stock_entry.on_submit",
+		"on_cancel": "chem_intercompany.chem_intercompany.doc_events.stock_entry.on_cancel",
+	}
 }
 # Home Pages
 # ----------

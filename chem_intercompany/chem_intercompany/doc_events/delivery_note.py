@@ -18,6 +18,32 @@ from frappe.model.utils import get_fetch_values
 def on_submit(self, method):
 	create_purchase_receipt(self)
 
+def on_cancel(self, method):
+	cancel_all(self)
+
+def on_trash(self, method):
+	delete_all(self)
+
+def cancel_all(self):
+	if self.pr_ref:
+		doc = frappe.get_doc("Purchase Receipt", self.pr_ref)
+
+		if doc.docstatus == 1:
+			doc.cancel()
+
+def delete_all(self):
+	if self.pr_ref:
+		pr_ref = self.pr_ref
+		frappe.db.set_value("Purchase Receipt", self.pr_ref, 'inter_company_delivery_reference', None)
+		frappe.db.set_value("Purchase Receipt", self.pr_ref, 'dn_ref', None)
+
+		self.db_set("pr_ref", None)
+		self.db_set("inter_company_receipt_reference", None)
+
+		doc = frappe.get_doc("Purchase Receipt", pr_ref)
+		doc.delete()
+	
+	
 def create_purchase_receipt(self):
 	def get_purchase_receipt_entry(source_name, target_doc=None, ignore_permissions= True):
 		def set_missing_value(source, target):
@@ -152,44 +178,16 @@ def create_purchase_receipt(self):
 			url = get_url_to_form("Purchase Receipt", pr.name)
 			frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pr.name))), title="Purchase Receipt Created", indicator="green")
 
-
-def get_invoiced_qty_map(delivery_note):
-	"""returns a map: {dn_detail: invoiced_qty}"""
-
-	invoiced_qty_map = {}
-
-	for dn_detail, qty in frappe.db.sql("""select dn_detail, qty from `tabSales Invoice Item`
-		where delivery_note=%s and docstatus=1""", delivery_note):
-			if not invoiced_qty_map.get(dn_detail):
-				invoiced_qty_map[dn_detail] = 0
-			invoiced_qty_map[dn_detail] += qty
-
-	return invoiced_qty_map
-
-def get_returned_qty_map(delivery_note):
-	"""returns a map: {so_detail: returned_qty}"""
-	
-	returned_qty_map = frappe._dict(frappe.db.sql("""select dn_item.item_code, sum(abs(dn_item.qty)) as qty
-		from `tabDelivery Note Item` dn_item, `tabDelivery Note` dn
-		where dn.name = dn_item.parent
-			and dn.docstatus = 1
-			and dn.is_return = 1
-			and dn.return_against = %s
-		group by dn_item.item_code
-	""", delivery_note))
-
-	return returned_qty_map
-
 # All Whitelisted Method:
 
-@frappe.whitelist()
-def submit_purchase_receipt(pr_number):
-	pr = frappe.get_doc("Purchase Receipt", pr_number)
-	pr.flags.ignore_permissions = True
-	pr.submit()
-	frappe.db.commit()
+# @frappe.whitelist()
+# def submit_purchase_receipt(pr_number):
+# 	pr = frappe.get_doc("Purchase Receipt", pr_number)
+# 	pr.flags.ignore_permissions = True
+# 	pr.submit()
+# 	frappe.db.commit()
 
-	url = get_url_to_form("Purchase Receipt", pr.name)
-	msg = "Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pr.name))
-	frappe.msgprint(_(msg), title="Purchase Receipt Created", indicator="green")
+# 	url = get_url_to_form("Purchase Receipt", pr.name)
+# 	msg = "Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pr.name))
+# 	frappe.msgprint(_(msg), title="Purchase Receipt Created", indicator="green")
 

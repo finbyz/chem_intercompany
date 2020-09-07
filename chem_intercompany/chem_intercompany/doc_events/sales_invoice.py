@@ -1,3 +1,42 @@
+
+from __future__ import unicode_literals
+
+import frappe
+from frappe import _
+
+from frappe.model.mapper import get_mapped_doc
+from erpnext.accounts.utils import get_fiscal_year
+from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
+from chem_intercompany.api import check_counter_series, validate_inter_company_transaction, get_inter_company_details
+
+def on_submit(self, method):
+	create_purchase_invoice(self)
+
+def on_trash(self, method):
+	delete_all(self)
+
+def on_cancel(self, method):
+	cancel_all(self)
+
+def cancel_all(self):
+	if self.pi_ref:
+		doc = frappe.get_doc("Purchase Invoice", self.pi_ref)
+
+		if doc.docstatus == 1:
+			doc.cancel()
+
+def delete_all(self):
+	if self.pr_ref:
+		pr_ref = self.pr_ref
+		frappe.db.set_value("Purchase Invoice", self.pr_ref, 'inter_company_invoice_reference', None)
+		frappe.db.set_value("Purchase Invoice", self.pr_ref, 'si_ref', None)
+
+		self.db_set("pi_ref", None)
+		self.db_set("inter_company_invoice_reference", None)
+
+		doc = frappe.get_doc("Purchase Invoice", pi_ref)
+		doc.delete()
+
 def create_purchase_invoice(self):
 	check_inter_company_transaction = None
 
@@ -29,16 +68,16 @@ def create_purchase_invoice(self):
 						'inter_company_order_reference'
 					)
 		
-			authority = frappe.db.get_value("Company", pi.company, 'authority')
+			# authority = frappe.db.get_value("Company", pi.company, 'authority')
 				
-			if authority == "Unauthorized" and (not pi.amended_from) and self.si_ref:
+			# if authority == "Unauthorized" and (not pi.amended_from) and self.si_ref:
 				
-				alternate_company = self.alternate_company
-				company_series = frappe.db.get_value("Company", alternate_company, 'company_series')
+			# 	alternate_company = self.alternate_company
+			# 	company_series = frappe.db.get_value("Company", alternate_company, 'company_series')
 
-				pi.company_series = frappe.db.get_value("Company", pi.name, "company_series")
-				pi.series_value = check_counter_series(pi.naming_series, company_series) - 1
-				pi.naming_series = 'A' + pi.naming_series
+			# 	pi.company_series = frappe.db.get_value("Company", pi.name, "company_series")
+			# 	pi.series_value = check_counter_series(pi.naming_series, company_series) - 1
+			# 	pi.naming_series = 'A' + pi.naming_series
 			
 			pi.si_ref = self.name
 
@@ -137,7 +176,6 @@ def make_inter_company_transaction(self, target_doc=None):
 				"warehouse",
 			], "postprocess": update_accounts,
 		}
-
 	}, target_doc, set_missing_values)
 
 	return doclist
