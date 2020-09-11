@@ -1,5 +1,7 @@
 import frappe
 from frappe import msgprint, _
+from frappe.utils import flt
+from datetime import timedelta
 
 def on_submit(self,method):
 	create_job_work_receipt_entry(self)
@@ -71,7 +73,7 @@ def job_work_repack(self):
 		se.reference_doctype = self.doctype
 		se.reference_docname =self.name
 		se.posting_date = self.posting_date
-		se.posting_time = self.posting_time
+		se.posting_time = self.posting_time + timedelta(minutes=1)
 		se.company = self.party
 		source_abbr = frappe.db.get_value('Company',self.company,'abbr')
 		target_abbr = frappe.db.get_value('Company',self.party,'abbr')
