@@ -22,6 +22,10 @@ def create_job_work_receipt_entry(self):
 			frappe.throw(_("Please set Job work difference account and warehouse in company <b>{0}</b>").format(self.party))
 
 		se = frappe.new_doc("Stock Entry")
+		if frappe.db.get_value("Company",self.company,'company_code') == frappe.db.get_value("Company",self.party,'company_code'):
+			se.naming_series = "STE.U2.company_series.fiscal.###"
+		else:
+			se.naming_series = "STE.A2.company_series.fiscal.###"
 		se.stock_entry_type = "Receive Jobwork Raw Material"
 		se.purpose = "Material Receipt"
 		se.set_posting_time = 1
