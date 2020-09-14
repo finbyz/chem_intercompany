@@ -20,8 +20,10 @@ def create_job_work_receipt_entry(self):
 
 		if not expense_account or not job_work_warehouse:
 			frappe.throw(_("Please set Job work difference account and warehouse in company <b>{0}</b>").format(self.party))
+		
 
 		se = frappe.new_doc("Stock Entry")
+		se.series_value = self.series_value
 		if frappe.db.get_value("Company",self.company,'company_code') == frappe.db.get_value("Company",self.party,'company_code'):
 			se.naming_series = "STE.U2.company_series.fiscal.###"
 		else:
