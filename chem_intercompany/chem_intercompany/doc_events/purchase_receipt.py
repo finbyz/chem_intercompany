@@ -10,7 +10,7 @@ def on_cancel(self,method):
 	cancel_stock_entry(self)
 
 def create_stock_entry(self):
-	if self.send_to_party and self.party_type == "Company":
+	if self.send_to_party:
 		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
 		job_work_out_warehouse = frappe.db.get_value("Company", self.company,'job_work_out_warehouse')
 		target_abbr = frappe.db.get_value("Company", self.party,'abbr')
