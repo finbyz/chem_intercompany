@@ -25,9 +25,9 @@ def create_job_work_receipt_entry(self):
 		se = frappe.new_doc("Stock Entry")
 		se.series_value = self.series_value
 		if frappe.db.get_value("Company",self.company,'company_code') == frappe.db.get_value("Company",self.party,'company_code'):
-			se.naming_series = "STE.U2.company_series.fiscal.###"
+			se.naming_series = "STE.company_series./.fiscal./UII/.###"
 		else:
-			se.naming_series = "STE.A2.company_series.fiscal.###"
+			se.naming_series = "STE.company_series./.fiscal./AII/.###"
 		se.stock_entry_type = "Receive Jobwork Raw Material"
 		se.purpose = "Material Receipt"
 		se.set_posting_time = 1
