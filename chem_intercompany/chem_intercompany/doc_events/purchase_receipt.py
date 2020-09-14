@@ -25,7 +25,11 @@ def create_stock_entry(self):
 		if not expense_account:
 			frappe.throw(_("Please set Job work difference account in company <b>{0}</b>").format(self.company))
 
+		if not self.jobwork_series_value:
+			frappe.throw(_("Please select Job Work Series Value"))
+
 		se = frappe.new_doc("Stock Entry")
+		se.series_value = int(self.jobwork_series_value)
 		if frappe.db.get_value("Company",self.company,'company_code') == frappe.db.get_value("Company",self.party,'company_code'):
 			se.naming_series = "STE.U2.company_series.fiscal.###"
 		else:
