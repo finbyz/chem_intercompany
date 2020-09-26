@@ -9,8 +9,15 @@ def on_submit(self,method):
 def on_cancel(self,method):
 	cancel_stock_entry(self)
 
+def on_trash(self,method):
+	for row in self.items:
+		if row.batch_no:
+			doc = frappe.get_doc("Batch",row.batch_no)
+			doc.db_set('reference_name', None)
+		#	frappe.db.set_value("Batch",row.batch_no,'reference_name',None)
+
 def create_stock_entry(self):
-	if self.send_to_party and self.party_type == "Company":
+	if self.send_to_party:
 		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
 		job_work_out_warehouse = frappe.db.get_value("Company", self.company,'job_work_out_warehouse')
 		target_abbr = frappe.db.get_value("Company", self.party,'abbr')

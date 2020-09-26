@@ -64,10 +64,12 @@ doc_events = {
 	"Stock Entry":{
 		"on_submit": "chem_intercompany.chem_intercompany.doc_events.stock_entry.on_submit",
 		"on_cancel": "chem_intercompany.chem_intercompany.doc_events.stock_entry.on_cancel",
+		"on_trash": "chem_intercompany.chem_intercompany.doc_events.stock_entry.on_trash",
 	},
 	"Purchase Receipt":{
 		"on_submit": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_submit",
-		"before_cancel": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_cancel"
+		"before_cancel": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_cancel",
+		"on_trash": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_trash"
 	},
 }
 # Home Pages
