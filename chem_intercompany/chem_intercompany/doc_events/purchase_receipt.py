@@ -23,8 +23,8 @@ def create_stock_entry(self):
 		target_abbr = frappe.db.get_value("Company", self.party,'abbr')
 		expense_account = frappe.db.get_value('Company',self.company,'job_work_difference_account')
 		
-		if not self.set_warehouse:
-			frappe.throw(_("Please set Warehouse"))
+		# if not self.set_warehouse:
+		# 	frappe.throw(_("Please set Warehouse"))
 
 		if not job_work_out_warehouse:
 			frappe.throw(_("Please set Job work out warehouse in company <b>{0}</b>").format(self.company))
@@ -54,11 +54,16 @@ def create_stock_entry(self):
 		se.company = self.company
 		se.from_warehouse = self.set_warehouse
 		se.to_warehouse = job_work_out_warehouse
+		se.vehicle_no = self.lr_no
+		se.e_way_bill_no = self.eway_bill_no
+		se.chemical_process = self.chemical_process
 
 		for row in self.items:
+			if not row.warehouse:
+				frappe.throw(_("Please set Warehouse for item {}".format(row.item_code)))
 			se.append("items",{
 				'item_code': row.item_code,
-				's_warehouse': self.set_warehouse,
+				's_warehouse': row.warehouse,
 				't_warehouse': job_work_out_warehouse,
 				'packaging_material': row.packaging_material,
 				'batch_no': row.batch_no,
