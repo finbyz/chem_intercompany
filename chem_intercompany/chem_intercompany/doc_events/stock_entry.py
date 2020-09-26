@@ -11,6 +11,9 @@ def on_cancel(self,method):
 	cancel_job_work(self)
 	cancel_repack_entry(self)
 
+def on_trash(self,method):
+	delete_all(self)
+
 def create_job_work_receipt_entry(self):
 	if self.stock_entry_type == "Send to Jobwork" and self.purpose == "Material Transfer" and self.send_to_party and self.party_type == "Company":
 		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
@@ -125,3 +128,11 @@ def cancel_repack_entry(self):
 				se.cancel()
 			se.db_set('reference_doctype','')
 			se.db_set('reference_docname','')   
+	
+def delete_all(self):
+	if self.jw_ref:
+		jw_ref = [self.jw_ref,self.name]
+		frappe.db.set_value(self.doctype, self.name, 'jw_ref', None)
+		frappe.db.set_value(self.doctype, self.jw_ref, 'jw_ref', None)
+		for se in jw_ref:
+			frappe.delete_doc("Stock Entry", se)
