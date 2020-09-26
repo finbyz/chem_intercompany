@@ -2,6 +2,8 @@ import frappe
 from frappe import msgprint, _
 from frappe.utils import flt
 from datetime import timedelta
+from chem_intercompany.controllers.batch_controller import  get_fifo_batches
+from six import itervalues
 
 def on_submit(self,method):
 	create_job_work_receipt_entry(self)
@@ -73,40 +75,139 @@ def job_work_repack(self):
 			frappe.throw(_("Please define To company warehouse"))
 		#create repack
 		se = frappe.new_doc("Stock Entry")
-		se.stock_entry_type = "Repack"
+		se.stock_entry_type = "Receive Jobwork Finish"
 		se.purpose = "Repack"
 		se.set_posting_time = 1
 		se.reference_doctype = self.doctype
 		se.reference_docname =self.name
 		se.posting_date = self.posting_date
-		se.posting_time = self.posting_time + timedelta(minutes=1)
+		se.posting_time = self.posting_time
 		se.company = self.party
+		se.receive_from_party = 1
+		se.party = self.company
 		source_abbr = frappe.db.get_value('Company',self.company,'abbr')
 		target_abbr = frappe.db.get_value('Company',self.party,'abbr')
+		job_work_out_warehouse = frappe.db.get_value('Company',self.party,'job_work_out_warehouse')
+		job_work_in_warehouse = frappe.db.get_value('Company',self.party,'job_work_warehouse')
 		item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
-		
+		for item in itervalues(item_dict):
+			item["from_warehouse"] = job_work_out_warehouse
+			item["cost_center"] = item["cost_center"].replace(source_abbr,target_abbr)
+			item["expense_account"] = item["expense_account"].replace(source_abbr,target_abbr)
 		se.add_to_stock_entry_detail(item_dict)
-		se.append("items",{
-			'item_code': self.finish_item,
-			't_warehouse': self.to_company_receive_warehouse,
-			'qty': self.fg_completed_qty,
-			'lot_no': self.items[0].lot_no,
-			'packaging_material': self.items[0].packaging_material,
-			'packing_size': self.items[0].packing_size,
-			'no_of_packages': self.items[0].no_of_packages,
-			'batch_yield': self.items[0].batch_yield,
-			'concentration': self.items[0].concentration
-		})
+		# for d in item_dict:
+		# 	se.append("items",{
+		# 		'item_code': item_dict[d].item_code,
+		# 		's_warehouse': job_work_out_warehouse,
+		# 		'uom': frappe.db.get_value("Item",item_dict[d].item_code,'stock_uom'),
+		# 		'stock_uom': frappe.db.get_value("Item",item_dict[d].item_code,'stock_uom'),
+		# 		'conversion_factor': 1,
+		# 		'qty': item_dict[d].qty,
+		# 		'cost_center': item_dict[d].cost_center,
+		# 		'allow_alternative_item': item_dict[d].allow_alternative_item or 0,
+		# 		'subcontracted_item': item_dict[d].subcontracted_item,
+		# 	})
+		
+		# new_items = [{k: v for k,v in d.items() if k!= 's_warehouse'} for d in self.items]
+		for item in self.items:	
+			se.append("items",{
+				'item_code': item.item_code,
+				't_warehouse': self.to_company_receive_warehouse or job_work_in_warehouse,
+				'qty': item.qty,
+				'uom': item.uom,
+				'stock_uom': item.stock_uom,
+				'conversion_factor': item.conversion_factor,
+				'lot_no': item.lot_no,
+				'packaging_material': item.packaging_material,
+				'packing_size': item.packing_size,
+				'no_of_packages': item.no_of_packages,
+				'batch_yield': item.batch_yield,
+				'concentration': item.concentration,
+			})
+
 		for row in self.additional_costs:
 			se.append("additional_costs",{
 				'expense_account': row.expense_account.replace(source_abbr,target_abbr),
 				'description': row.description,
 				'amount': row.amount
 			})
-		
+
+		items = []
+
+		for d in se.items:
+			if not d.t_warehouse:
+				if not d.s_warehouse and not d.t_warehouse:
+					d.s_warehouse = job_work_out_warehouse
+
+			
+				has_batch_no = frappe.db.get_value('Item', d.item_code, 'has_batch_no')
+
+				if not has_batch_no:
+					continue
+
+				batches = get_fifo_batches(d.item_code, d.s_warehouse)
+				#frappe.msgprint(str(batches))
+				if not batches:
+					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+
+				remaining_qty = d.qty
+
+				for i, batch in enumerate(batches):
+					if i == 0:
+						if batch.qty >= remaining_qty:
+							d.batch_no = batch.batch_id
+							break
+
+						else:
+							if len(batches) == 1:
+								frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+
+							remaining_qty -= flt(batch.qty)
+							d.qty = batch.qty
+							d.batch_no = batch.batch_id
+
+							items.append(frappe._dict({
+								'item_code': d.item_code,
+								's_warehouse': job_work_out_warehouse,
+								'qty': remaining_qty,
+							}))
+
+					else:
+						flag = 0
+						for x in items[:]:
+							if x.get('batch_no'):
+								continue
+
+							if batch.qty >= remaining_qty:
+								x.batch_no = batch.batch_id
+								flag = 1
+								break
+							
+							else:
+								remaining_qty -= flt(batch.qty)
+								
+								x.qty = batch.qty
+								x.batch_no = batch.batch_id
+								
+								items.append(frappe._dict({
+									'item_code': d.item_code,
+									's_warehouse': job_work_out_warehouse,
+									'qty': remaining_qty,
+								}))
+
+						if flag:
+							break
+
+				else:
+					if remaining_qty:
+						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+
+		se.extend('items', items)
+
 		se.save(ignore_permissions=True)
 		se.get_stock_and_rate()
 		se.save(ignore_permissions=True)
+
 		se.submit()
 		
 def cancel_job_work(self):
@@ -119,9 +220,9 @@ def cancel_job_work(self):
 def cancel_repack_entry(self):
 	if self.send_to_party and self.party_type == "Company":
 		if frappe.db.exists("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.party}):
-			se = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.job_work_company})
+			se = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.party})
 			se.flags.ignore_permissions = True
 			if se.docstatus == 1:
 				se.cancel()
 			se.db_set('reference_doctype','')
-			se.db_set('reference_docname','')   
+			se.db_set('reference_docname','')
