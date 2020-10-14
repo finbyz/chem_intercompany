@@ -72,8 +72,9 @@ def job_work_repack(self):
 	if self.stock_entry_type == "Send Jobwork Finish" and self.purpose == "Material Issue" and self.send_to_party and self.party_type == "Company":
 		if not self.finish_item:
 			frappe.throw(_("Please define finish Item"))
-		if not self.bom_no or not self.fg_completed_qty:
-			frappe.throw(_("Please define Bom No and For Qty"))
+
+		# if not self.bom_no or not self.fg_completed_qty:
+		# 	frappe.throw(_("Please define Bom No and For Qty"))
 		if not self.to_company_receive_warehouse:
 			frappe.throw(_("Please define To company warehouse"))
 		#create repack
@@ -92,26 +93,32 @@ def job_work_repack(self):
 		target_abbr = frappe.db.get_value('Company',self.party,'abbr')
 		job_work_out_warehouse = frappe.db.get_value('Company',self.party,'job_work_out_warehouse')
 		job_work_in_warehouse = frappe.db.get_value('Company',self.party,'job_work_warehouse')
-		item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
-		for item in itervalues(item_dict):
-			item["from_warehouse"] = job_work_out_warehouse
-			item["cost_center"] = item["cost_center"].replace(source_abbr,target_abbr)
-			item["expense_account"] = item["expense_account"].replace(source_abbr,target_abbr)
-		se.add_to_stock_entry_detail(item_dict)
-		# for d in item_dict:
-		# 	se.append("items",{
-		# 		'item_code': item_dict[d].item_code,
-		# 		's_warehouse': job_work_out_warehouse,
-		# 		'uom': frappe.db.get_value("Item",item_dict[d].item_code,'stock_uom'),
-		# 		'stock_uom': frappe.db.get_value("Item",item_dict[d].item_code,'stock_uom'),
-		# 		'conversion_factor': 1,
-		# 		'qty': item_dict[d].qty,
-		# 		'cost_center': item_dict[d].cost_center,
-		# 		'allow_alternative_item': item_dict[d].allow_alternative_item or 0,
-		# 		'subcontracted_item': item_dict[d].subcontracted_item,
-		# 	})
-		
-		# new_items = [{k: v for k,v in d.items() if k!= 's_warehouse'} for d in self.items]
+
+		if self.bom_no:
+			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
+			for item in itervalues(item_dict):
+				item["from_warehouse"] = job_work_out_warehouse
+				item["cost_center"] = item["cost_center"].replace(source_abbr,target_abbr)
+				item["expense_account"] = item["expense_account"].replace(source_abbr,target_abbr)
+			se.add_to_stock_entry_detail(item_dict)
+
+		else:
+			for item in self.items:	
+				se.append("items",{
+					'item_code': item.item_code,
+					's_warehouse': job_work_out_warehouse,
+					'qty': item.qty,
+					'uom': item.uom,
+					'stock_uom': item.stock_uom,
+					'conversion_factor': item.conversion_factor,
+					'lot_no': item.lot_no,
+					'packaging_material': item.packaging_material,
+					'packing_size': item.packing_size,
+					'no_of_packages': item.no_of_packages,
+					'batch_yield': item.batch_yield,
+					'concentration': item.concentration,
+				})
+
 		for item in self.items:	
 			se.append("items",{
 				'item_code': item.item_code,
@@ -148,8 +155,7 @@ def job_work_repack(self):
 				if not has_batch_no:
 					continue
 
-				batches = get_fifo_batches(d.item_code, d.s_warehouse)
-				#frappe.msgprint(str(batches))
+				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.company)
 				if not batches:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 

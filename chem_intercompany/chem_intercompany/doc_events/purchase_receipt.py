@@ -57,7 +57,11 @@ def create_stock_entry(self):
 		se.vehicle_no = self.lr_no
 		se.e_way_bill_no = self.eway_bill_no
 		se.chemical_process = self.chemical_process
-
+		se.shipping_address_name = self.shipping_address
+		se.customer_gstin = self.company_gstin
+		se.place_of_supply = self.place_of_supply
+		se.shipping_address = self.shipping_address_display
+		se.purchase_receipt_number = self.name
 		for row in self.items:
 			if not row.warehouse:
 				frappe.throw(_("Please set Warehouse for item {}".format(row.item_code)))
@@ -74,7 +78,14 @@ def create_stock_entry(self):
 				"batch_yield": row.batch_yield,
 				'qty': row.qty,
 				'expense_account': expense_account,
-				'cost_center': row.cost_center
+				'cost_center': row.cost_center,
+				'received_qty':row.received_qty,
+				'tare_weight':row.tare_weight,
+				'quantity':row.quantity,
+				'short_quantity':row.short_quantity,
+				'purchase_receipt_item_reference':row.name,
+				'supplier_concentration':row.supplier_concentration,
+				'supplier_quantity':row.supplier_quantity
 			})
 		
 		# if self.additional_costs:
