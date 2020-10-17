@@ -19,14 +19,14 @@ def on_cancel(self, method):
 	cancel_all(self)
 
 def cancel_all(self):
-	if self.pi_ref:
+	if self.get('pi_ref'):
 		doc = frappe.get_doc("Purchase Invoice", self.pi_ref)
 
 		if doc.docstatus == 1:
 			doc.cancel()
 
 def delete_all(self):
-	if self.pr_ref:
+	if self.get('pr_ref'):
 		pr_ref = self.pr_ref
 		frappe.db.set_value("Purchase Invoice", self.pr_ref, 'inter_company_invoice_reference', None)
 		frappe.db.set_value("Purchase Invoice", self.pr_ref, 'si_ref', None)

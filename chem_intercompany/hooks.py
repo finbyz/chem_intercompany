@@ -11,6 +11,11 @@ app_color = "grey"
 app_email = "info@finbyz.com"
 app_license = "GPL 3.0"
 
+
+
+from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
+from chem_intercompany.chem_intercompany.doc_events.stock_entry import get_bom_items
+StockEntry.get_bom_items = get_bom_items
 # Includes in <head>
 # ------------------
 

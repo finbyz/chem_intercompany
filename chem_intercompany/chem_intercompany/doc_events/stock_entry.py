@@ -4,6 +4,7 @@ from frappe.utils import flt
 from datetime import timedelta
 from chem_intercompany.controllers.batch_controller import  get_fifo_batches
 from six import itervalues
+import json
 
 def on_submit(self,method):
 	create_job_work_receipt_entry(self)
@@ -79,7 +80,7 @@ def job_work_repack(self):
 			frappe.throw(_("Please define To company warehouse"))
 		#create repack
 		se = frappe.new_doc("Stock Entry")
-		se.stock_entry_type = "Receive Jobwork Finish"
+		se.stock_entry_type = "Receive Jobwork Return"
 		se.purpose = "Repack"
 		se.set_posting_time = 1
 		se.reference_doctype = self.doctype
@@ -88,6 +89,7 @@ def job_work_repack(self):
 		se.posting_time = self.posting_time
 		se.company = self.party
 		se.receive_from_party = 1
+		se.party_type = self.party_type
 		se.party = self.company
 		source_abbr = frappe.db.get_value('Company',self.company,'abbr')
 		target_abbr = frappe.db.get_value('Company',self.party,'abbr')
@@ -219,6 +221,7 @@ def job_work_repack(self):
 
 		se.submit()
 		
+
 def cancel_job_work(self):
 	if self.jw_ref:
 		jw_doc = frappe.get_doc("Stock Entry", self.jw_ref)
@@ -243,3 +246,113 @@ def delete_all(self):
 		frappe.db.set_value(self.doctype, self.jw_ref, 'jw_ref', None)
 		for se in jw_ref:
 			frappe.delete_doc("Stock Entry", se)
+
+@frappe.whitelist()
+def get_bom_items(self):
+	if self.stock_entry_type == "Receive Jobwork Return":
+		self.set('items', [])
+		if not self.finish_item:
+			frappe.throw(_("Please define finish Item"))
+		job_work_in_warehouse = frappe.db.get_value('Company',self.company,'job_work_warehouse')
+		job_work_out_warehouse = frappe.db.get_value('Company',self.company,'job_work_out_warehouse')
+
+		if self.bom_no:
+			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
+			for item in itervalues(item_dict):
+				item["from_warehouse"] = job_work_out_warehouse
+			self.add_to_stock_entry_detail(item_dict)
+
+		else:	
+			self.append("items",{
+				'item_code':  self.finish_item,
+				's_warehouse': job_work_out_warehouse,
+				'qty': self.fg_completed_qty,
+				'quantity': self.fg_completed_qty or self.fg_completed_quantity,
+				'uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
+				'stock_uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
+				'conversion_factor': 1,
+			})
+
+		self.append("items",{
+			'item_code': self.finish_item,
+			't_warehouse': self.to_company_receive_warehouse or job_work_in_warehouse,
+			'qty': self.fg_completed_qty,
+			'quantity': self.fg_completed_qty or self.fg_completed_quantity,
+			'uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
+			'stock_uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
+			'conversion_factor': 1,
+			'concentration': 100,
+		})
+		
+		items = []
+
+		for d in self.items:
+			if not d.t_warehouse:
+				if not d.s_warehouse and not d.t_warehouse:
+					d.s_warehouse = job_work_out_warehouse
+	
+				has_batch_no = frappe.db.get_value('Item', d.item_code, 'has_batch_no')
+
+				if not has_batch_no:
+					continue
+
+				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.party)
+				if not batches:
+					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+
+				remaining_qty = d.qty
+
+				for i, batch in enumerate(batches):
+					if i == 0:
+						if batch.qty >= remaining_qty:
+							d.batch_no = batch.batch_id
+							break
+
+						else:
+							if len(batches) == 1:
+								frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+
+							remaining_qty -= flt(batch.qty)
+							d.qty = batch.qty
+							d.batch_no = batch.batch_id
+
+							items.append(frappe._dict({
+								'item_code': d.item_code,
+								's_warehouse': job_work_out_warehouse,
+								'qty': remaining_qty,
+							}))
+
+					else:
+						flag = 0
+						for x in items[:]:
+							if x.get('batch_no'):
+								continue
+
+							if batch.qty >= remaining_qty:
+								x.batch_no = batch.batch_id
+								flag = 1
+								break
+							
+							else:
+								remaining_qty -= flt(batch.qty)
+								
+								x.qty = batch.qty
+								x.batch_no = batch.batch_id
+								
+								items.append(frappe._dict({
+									'item_code': d.item_code,
+									's_warehouse': job_work_out_warehouse,
+									'qty': remaining_qty,
+								}))
+
+						if flag:
+							break
+
+				else:
+					if remaining_qty:
+						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+
+		#return items
+		self.extend('items', items)
+		#self.save()
+
