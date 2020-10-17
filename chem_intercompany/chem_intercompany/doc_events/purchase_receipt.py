@@ -62,6 +62,7 @@ def create_stock_entry(self):
 		se.place_of_supply = self.place_of_supply
 		se.shipping_address = self.shipping_address_display
 		se.purchase_receipt_number = self.name
+		se.letter_head = frappe.db.get_value("Company",self.company,'default_letter_head')
 		for row in self.items:
 			if not row.warehouse:
 				frappe.throw(_("Please set Warehouse for item {}".format(row.item_code)))
@@ -77,12 +78,16 @@ def create_stock_entry(self):
 				'lot_no': row.lot_no,
 				"batch_yield": row.batch_yield,
 				'qty': row.qty,
+				'quantity':row.quantity,
+				'short_quantity':row.short_quantity,
+				'basic_rate':row.rate,
+				'amount':row.amount,
+				'price':row.price,
 				'expense_account': expense_account,
 				'cost_center': row.cost_center,
 				'received_qty':row.received_qty,
+				'rejected_qty':row.rejected_qty,
 				'tare_weight':row.tare_weight,
-				'quantity':row.quantity,
-				'short_quantity':row.short_quantity,
 				'purchase_receipt_item_reference':row.name,
 				'supplier_concentration':row.supplier_concentration,
 				'supplier_quantity':row.supplier_quantity

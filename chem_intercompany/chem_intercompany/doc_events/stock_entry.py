@@ -41,7 +41,11 @@ def create_job_work_receipt_entry(self):
 		se.posting_date = self.posting_date
 		se.posting_time = self.posting_time
 		se.company = self.party
+		se.receive_from_party = 1
+		se.party_type = self.party_type
+		se.party = self.company
 		se.to_warehouse = self.to_company_receive_warehouse or job_work_warehouse
+		se.letter_head = frappe.db.get_value("Company",self.party,'default_letter_head')
 
 		if self.amended_from:
 			se.amended_from = frappe.db.get_value("Stock Entry", {'jw_ref': self.amended_from}, "name")
@@ -49,8 +53,31 @@ def create_job_work_receipt_entry(self):
 			se.append("items",{
 				'item_code': row.item_code,
 				't_warehouse':  self.to_company_receive_warehouse or job_work_warehouse,
-				'batch_no': row.batch_no,
 				'qty': row.qty,
+				'quantity':row.quantity,
+				'short_quantity':row.short_quantity,
+				'basic_rate':row.basic_rate,
+				'basic_amount':row.basic_amount,
+				'additional_cost':row.additional_cost,
+				'amount':row.amount,
+				'price':row.price,
+				'uom':row.uom,
+				'stock_uom':row.stock_uom,
+				'conversion_factor':row.conversion_factor,
+				'transfer_qty':row.transfer_qty,
+				'batch_no':row.batch_no,
+				'lot_no':row.lot_no,
+				'packaging_material':row.packaging_material,
+				'received_qty':row.received_qty,
+				'received_quantity':row.received_quantity,
+				'packing_size':row.packing_size,
+				'tare_weight':row.tare_weight,
+				'no_of_packages':row.no_of_packages,
+				'batch_yield':row.batch_yield,
+				'concentration':row.concentration,
+				'supplier_concentration':row.supplier_concentration,
+				'supplier_quantity':row.supplier_quantity,
+				'actual_qty':row.actual_qty,
 				'expense_account': expense_account,
 				'cost_center': row.cost_center.replace(source_abbr, target_abbr)
 			})
@@ -91,10 +118,12 @@ def job_work_repack(self):
 		se.receive_from_party = 1
 		se.party_type = self.party_type
 		se.party = self.company
+		se.letter_head = frappe.db.get_value("Company",self.party,'default_letter_head')
 		source_abbr = frappe.db.get_value('Company',self.company,'abbr')
 		target_abbr = frappe.db.get_value('Company',self.party,'abbr')
 		job_work_out_warehouse = frappe.db.get_value('Company',self.party,'job_work_out_warehouse')
 		job_work_in_warehouse = frappe.db.get_value('Company',self.party,'job_work_warehouse')
+		expense_account = frappe.db.get_value('Company',self.party,'job_work_difference_account')
 
 		if self.bom_no:
 			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
@@ -110,15 +139,31 @@ def job_work_repack(self):
 					'item_code': item.item_code,
 					's_warehouse': job_work_out_warehouse,
 					'qty': item.qty,
-					'uom': item.uom,
-					'stock_uom': item.stock_uom,
-					'conversion_factor': item.conversion_factor,
-					'lot_no': item.lot_no,
-					'packaging_material': item.packaging_material,
-					'packing_size': item.packing_size,
-					'no_of_packages': item.no_of_packages,
-					'batch_yield': item.batch_yield,
-					'concentration': item.concentration,
+					'quantity':item.quantity,
+					'short_quantity':item.short_quantity,
+					'basic_rate':item.basic_rate,
+					'basic_amount':item.basic_amount,
+					'additional_cost':item.additional_cost,
+					'amount':item.amount,
+					'price':item.price,
+					'uom':item.uom,
+					'stock_uom':item.stock_uom,
+					'conversion_factor':item.conversion_factor,
+					'transfer_qty':item.transfer_qty,
+					'lot_no':item.lot_no,
+					'packaging_material':item.packaging_material,
+					'received_qty':item.received_qty,
+					'received_quantity':item.received_quantity,
+					'packing_size':item.packing_size,
+					'tare_weight':item.tare_weight,
+					'no_of_packages':item.no_of_packages,
+					'batch_yield':item.batch_yield,
+					'concentration':item.concentration,
+					'supplier_concentration':item.supplier_concentration,
+					'supplier_quantity':item.supplier_quantity,
+					'actual_qty':item.actual_qty,
+					'expense_account': expense_account, # Ask to sir 
+					'cost_center': item.cost_center.replace(source_abbr, target_abbr)
 				})
 
 		for item in self.items:	
