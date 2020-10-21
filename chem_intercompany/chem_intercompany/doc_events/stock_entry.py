@@ -6,6 +6,7 @@ from chem_intercompany.controllers.batch_controller import  get_fifo_batches
 from six import itervalues
 import json
 
+	
 def on_submit(self,method):
 	create_job_work_receipt_entry(self)
 	job_work_repack(self)
@@ -46,6 +47,7 @@ def create_job_work_receipt_entry(self):
 		se.party = self.company
 		se.to_warehouse = self.to_company_receive_warehouse or job_work_warehouse
 		se.letter_head = frappe.db.get_value("Company",self.party,'default_letter_head')
+		se.jobwork_invoice_no = self.jobwork_invoice_no
 
 		if self.amended_from:
 			se.amended_from = frappe.db.get_value("Stock Entry", {'jw_ref': self.amended_from}, "name")
@@ -69,7 +71,6 @@ def create_job_work_receipt_entry(self):
 				'lot_no':row.lot_no,
 				'packaging_material':row.packaging_material,
 				'received_qty':row.received_qty,
-				'received_quantity':row.received_quantity,
 				'packing_size':row.packing_size,
 				'tare_weight':row.tare_weight,
 				'no_of_packages':row.no_of_packages,
@@ -132,6 +133,11 @@ def job_work_repack(self):
 				item["cost_center"] = item["cost_center"].replace(source_abbr,target_abbr)
 				item["expense_account"] = item["expense_account"].replace(source_abbr,target_abbr)
 			se.add_to_stock_entry_detail(item_dict)
+			se.set_scrap_items()
+			se.set_actual_qty()
+			se.set_incoming_rate()
+			
+
 
 		else:
 			for item in self.items:	
@@ -153,7 +159,6 @@ def job_work_repack(self):
 					'lot_no':item.lot_no,
 					'packaging_material':item.packaging_material,
 					'received_qty':item.received_qty,
-					'received_quantity':item.received_quantity,
 					'packing_size':item.packing_size,
 					'tare_weight':item.tare_weight,
 					'no_of_packages':item.no_of_packages,
@@ -180,6 +185,7 @@ def job_work_repack(self):
 				'no_of_packages': item.no_of_packages,
 				'batch_yield': item.batch_yield,
 				'concentration': item.concentration,
+				'set_basic_rate_manually' : 1
 			})
 
 		for row in self.additional_costs:
@@ -259,11 +265,12 @@ def job_work_repack(self):
 						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 
 		se.extend('items', items)
-
 		se.save(ignore_permissions=True)
 		se.get_stock_and_rate()
 		se.save(ignore_permissions=True)
-
+		# frappe.msgprint(str(se.total_incoming_value))
+		# frappe.msgprint(str(se.total_outgoing_value))
+		# frappe.msgprint(str(se.value_difference))
 		se.submit()
 		
 
