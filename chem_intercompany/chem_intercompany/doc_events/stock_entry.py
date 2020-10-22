@@ -35,6 +35,7 @@ def create_job_work_receipt_entry(self):
 			se.naming_series = "STE.company_series./.fiscal./UII/.###"
 		else:
 			se.naming_series = "STE.company_series./.fiscal./AII/.###"
+		
 		se.stock_entry_type = "Receive Jobwork Raw Material"
 		se.purpose = "Material Receipt"
 		se.set_posting_time = 1
@@ -48,7 +49,6 @@ def create_job_work_receipt_entry(self):
 		se.to_warehouse = self.to_company_receive_warehouse or job_work_warehouse
 		se.letter_head = frappe.db.get_value("Company",self.party,'default_letter_head')
 		se.jobwork_invoice_no = self.jobwork_invoice_no
-
 		if self.amended_from:
 			se.amended_from = frappe.db.get_value("Stock Entry", {'jw_ref': self.amended_from}, "name")
 		for row in self.items:
@@ -125,6 +125,7 @@ def job_work_repack(self):
 		job_work_out_warehouse = frappe.db.get_value('Company',self.party,'job_work_out_warehouse')
 		job_work_in_warehouse = frappe.db.get_value('Company',self.party,'job_work_warehouse')
 		expense_account = frappe.db.get_value('Company',self.party,'job_work_difference_account')
+
 
 		if self.bom_no:
 			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
