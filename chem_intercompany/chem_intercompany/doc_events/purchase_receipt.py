@@ -86,7 +86,6 @@ def create_stock_entry(self):
 				'expense_account': expense_account,
 				'cost_center': row.cost_center,
 				'received_qty':row.received_qty,
-				'rejected_qty':row.rejected_qty,
 				'tare_weight':row.tare_weight,
 				'purchase_receipt_item_reference':row.name,
 				'supplier_concentration':row.supplier_concentration,
