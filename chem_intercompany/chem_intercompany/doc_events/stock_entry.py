@@ -6,7 +6,6 @@ from chem_intercompany.controllers.batch_controller import  get_fifo_batches
 from six import itervalues
 import json
 
-	
 def on_submit(self,method):
 	create_job_work_receipt_entry(self)
 	job_work_repack(self)
@@ -30,12 +29,11 @@ def create_job_work_receipt_entry(self):
 		
 
 		se = frappe.new_doc("Stock Entry")
-		se.series_value = self.series_value
+		se.series_value = self.jobwork_series_value or self.series_value
 		if frappe.db.get_value("Company",self.company,'company_code') == frappe.db.get_value("Company",self.party,'company_code'):
-			se.naming_series = "STE.company_series./.fiscal./UII/.###"
+			se.naming_series = self.jobwork_series or "STE.company_series./.fiscal./UII/.###"
 		else:
-			se.naming_series = "STE.company_series./.fiscal./AII/.###"
-		
+			se.naming_series = self.jobwork_series or "STE.company_series./.fiscal./AII/.###"
 		se.stock_entry_type = "Receive Jobwork Raw Material"
 		se.purpose = "Material Receipt"
 		se.set_posting_time = 1
@@ -109,6 +107,8 @@ def job_work_repack(self):
 		#create repack
 		se = frappe.new_doc("Stock Entry")
 		se.stock_entry_type = "Receive Jobwork Return"
+		se.naming_series = self.jobwork_series or self.naming_series
+		se.series_value = self.jobwork_series_value or self.series_value
 		se.purpose = "Repack"
 		se.set_posting_time = 1
 		se.reference_doctype = self.doctype
