@@ -74,11 +74,20 @@ def create_job_work_receipt_entry(self):
 				'no_of_packages':row.no_of_packages,
 				'batch_yield':row.batch_yield,
 				'concentration':row.concentration,
-				'supplier_concentration':row.supplier_concentration,
-				'supplier_quantity':row.supplier_quantity,
 				'actual_qty':row.actual_qty,
 				'expense_account': expense_account,
-				'cost_center': row.cost_center.replace(source_abbr, target_abbr)
+				'cost_center': row.cost_center.replace(source_abbr, target_abbr),
+				'supplier_qty':row.supplier_qty,
+				'supplier_quantity':row.supplier_quantity,
+				'supplier_concentration':row.supplier_concentration,
+				'accepted_qty':row.accepted_qty,
+				'accepted_quantity':row.accepted_quantity,
+				'accepted_concentration':row.accepted_concentration,
+				'receive_packing_size':row.receive_packing_size,
+				'receive_no_of_packages':row.receive_no_of_packages,
+				'receive_qty':row.receive_qty,
+				'receive_quantity':row.receive_quantity,
+				'received_concentration':row.received_concentration,
 			})
 		
 		if self.additional_costs:
@@ -134,11 +143,6 @@ def job_work_repack(self):
 				item["cost_center"] = item["cost_center"].replace(source_abbr,target_abbr)
 				item["expense_account"] = item["expense_account"].replace(source_abbr,target_abbr)
 			se.add_to_stock_entry_detail(item_dict)
-			se.set_scrap_items()
-			se.set_actual_qty()
-			se.set_incoming_rate()
-			
-
 
 		else:
 			for item in self.items:	
@@ -165,17 +169,31 @@ def job_work_repack(self):
 					'no_of_packages':item.no_of_packages,
 					'batch_yield':item.batch_yield,
 					'concentration':item.concentration,
-					'supplier_concentration':item.supplier_concentration,
-					'supplier_quantity':item.supplier_quantity,
 					'actual_qty':item.actual_qty,
-					'expense_account': expense_account, # Ask to sir 
-					'cost_center': item.cost_center.replace(source_abbr, target_abbr)
+					'expense_account': expense_account,
+					'cost_center': item.cost_center.replace(source_abbr, target_abbr),
+					'supplier_qty':item.supplier_qty,
+					'supplier_quantity':item.supplier_quantity,
+					'supplier_concentration':item.supplier_concentration,
+					'accepted_qty':item.accepted_qty,
+					'accepted_quantity':item.accepted_quantity,
+					'accepted_concentration':item.accepted_concentration,
+					'receive_packing_size':item.receive_packing_size,
+					'receive_no_of_packages':item.receive_no_of_packages,
+					'receive_qty':item.receive_qty,
+					'receive_quantity':item.receive_quantity,
+					'received_concentration':item.received_concentration,
 				})
+		
+		se.set_scrap_items()
+		se.set_actual_qty()
+		se.set_incoming_rate()
 
 		for item in self.items:	
 			se.append("items",{
 				'item_code': item.item_code,
 				't_warehouse': self.to_company_receive_warehouse or job_work_in_warehouse,
+				'quantity':item.quantity,
 				'qty': item.qty,
 				'uom': item.uom,
 				'stock_uom': item.stock_uom,
@@ -185,8 +203,7 @@ def job_work_repack(self):
 				'packing_size': item.packing_size,
 				'no_of_packages': item.no_of_packages,
 				'batch_yield': item.batch_yield,
-				'concentration': item.concentration,
-				'set_basic_rate_manually' : 1
+				'concentration': item.concentration
 			})
 
 		for row in self.additional_costs:
@@ -213,11 +230,11 @@ def job_work_repack(self):
 				if not batches:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 
-				remaining_qty = d.qty
-
+				remaining_qty = round(flt(d.qty),2)
+				#frappe.msgprint(str(batches))
 				for i, batch in enumerate(batches):
 					if i == 0:
-						if batch.qty >= remaining_qty:
+						if round(batch.qty,2) >= remaining_qty:
 							d.batch_no = batch.batch_id
 							break
 
@@ -264,7 +281,7 @@ def job_work_repack(self):
 				else:
 					if remaining_qty:
 						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
-
+	
 		se.extend('items', items)
 		se.save(ignore_permissions=True)
 		se.get_stock_and_rate()

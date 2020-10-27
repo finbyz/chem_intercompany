@@ -77,6 +77,7 @@ def create_stock_entry(self):
 				'concentration': row.concentration,
 				'lot_no': row.lot_no,
 				"batch_yield": row.batch_yield,
+				'received_qty':row.received_qty,
 				'qty': row.qty,
 				'quantity':row.quantity,
 				'short_quantity':row.short_quantity,
@@ -85,11 +86,19 @@ def create_stock_entry(self):
 				'price':row.price,
 				'expense_account': expense_account,
 				'cost_center': row.cost_center,
-				'received_qty':row.received_qty,
 				'tare_weight':row.tare_weight,
 				'purchase_receipt_item_reference':row.name,
+				'supplier_qty':row.supplier_qty,
+				'supplier_quantity':row.supplier_quantity,
 				'supplier_concentration':row.supplier_concentration,
-				'supplier_quantity':row.supplier_quantity
+				'accepted_qty':row.accepted_qty,
+				'accepted_quantity':row.accepted_quantity,
+				'accepted_concentration':row.accepted_concentration,
+				'receive_packing_size':row.receive_packing_size,
+				'receive_no_of_packages':row.receive_no_of_packages,
+				'receive_qty':row.receive_qty,
+				'receive_quantity':row.receive_quantity,
+				'received_concentration':row.received_concentration,
 			})
 		
 		# if self.additional_costs:

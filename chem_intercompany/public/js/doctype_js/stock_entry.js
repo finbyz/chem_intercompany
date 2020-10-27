@@ -31,6 +31,7 @@ frappe.ui.form.on('Stock Entry', {
         }
     },
     validate: function (frm) { 
+        console.log(frappe.utils.sum((frm.doc.items || []).map(row => row.qty)));
         //frm.trigger('stock_entry_type')
     },
     
