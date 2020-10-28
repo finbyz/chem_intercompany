@@ -263,10 +263,10 @@ def job_work_repack(self):
 						concentration = flt(batch_concentration_dict[batch])
 						remaining_qty = round(flt(remaining_quantity*100 / concentration),2)
 						if i == 0:
-							if round(qty,2) >= round(remaining_qty,2):
+							if round(qty,2) >= round_down(remaining_qty,1):
 								d.batch_no = batch
 								d.concentration = concentration
-								d.qty = round(remaining_qty,2)
+								d.qty = min(round(remaining_qty,2),round(qty,2))
 								if maintain_as_is_stock:
 									quantity = round(d.qty * d.concentration /100,2)
 								else:
@@ -304,10 +304,10 @@ def job_work_repack(self):
 								if x.get('batch_no'):
 									continue
 
-								if round(qty,2) >= round(remaining_qty,2):
+								if round(qty,2) >= round_down(remaining_qty,1):
 									x.batch_no = batch											
 									x.concentration = concentration
-									x.qty = round(remaining_qty,2)
+									x.qty =  min(round(remaining_qty,2),round(qty,2))
 									if maintain_as_is_stock:
 										quantity = round(x.qty * concentration /100,2)
 									else:
@@ -462,10 +462,10 @@ def get_bom_items(self):
 						concentration = flt(batch_concentration_dict[batch])
 						remaining_qty = round(flt(remaining_quantity*100 / concentration),2)
 						if i == 0:
-							if round(qty,2) >= round(remaining_qty,2):
+							if round(qty,2) >= round_down(remaining_qty,1)::
 								d.batch_no = batch
 								d.concentration = concentration
-								d.qty = round(remaining_qty,2)
+								d.qty = min(round(remaining_qty,2),round(qty,2))
 								if maintain_as_is_stock:
 									quantity = round(d.qty * d.concentration /100,2)
 								else:
@@ -503,10 +503,10 @@ def get_bom_items(self):
 								if x.get('batch_no'):
 									continue
 
-								if round(qty,2) >= round(remaining_qty,2):
+								if round(qty,2) >= round_down(remaining_qty,1)::
 									x.batch_no = batch											
 									x.concentration = concentration
-									x.qty = round(remaining_qty,2)
+									x.qty = min(round(remaining_qty,2),round(qty,2))
 									if maintain_as_is_stock:
 										quantity = round(x.qty * concentration /100,2)
 									else:

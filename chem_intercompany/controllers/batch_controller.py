@@ -19,6 +19,6 @@ def get_fifo_batches(item_code, warehouse, party):
 			and se.party = %s
 		group by sle.batch_no
 		having sum(sle.actual_qty) > 0 
-		order by sle.posting_date """, (item_code, warehouse, party), as_dict=True)
+		order by sle.posting_date, bt.name """, (item_code, warehouse, party), as_dict=True)
 
 	return batches
