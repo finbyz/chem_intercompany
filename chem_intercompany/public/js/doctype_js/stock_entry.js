@@ -39,7 +39,7 @@ frappe.ui.form.on('Stock Entry', {
     
     stock_entry_type: function (frm) {
         if(frm.doc.stock_entry_type == "Send Jobwork Finish") {
-            frm.set_value('from_bom',1)
+           // frm.set_value('from_bom',1)
         }
         if(frm.doc.purpose == "Material Receipt" || frm.doc.purpose == "Repack"){
             frappe.meta.get_docfield("Stock Entry Detail","receive_packing_size", cur_frm.doc.name).read_only = 0;
