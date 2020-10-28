@@ -7,7 +7,7 @@ from frappe.utils import cstr
 def get_fifo_batches(item_code, warehouse, party):
 	batches = frappe.db.sql("""
 		select 
-			bt.batch_id, sum(sle.actual_qty) as qty 
+			bt.batch_id, sum(sle.actual_qty) as qty, bt.concentration
         from `tabBatch` as bt
         join `tabStock Ledger Entry` as sle ignore index (item_code, warehouse) 
 		on (bt.batch_id = sle.batch_no )
