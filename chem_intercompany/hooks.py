@@ -67,6 +67,7 @@ doc_events = {
 		"on_trash": "chem_intercompany.chem_intercompany.doc_events.sales_invoice.on_trash",
 	},
 	"Stock Entry":{
+		#"validate": "chem_intercompany.chem_intercompany.doc_events.stock_entry.validate",
 		"on_submit": "chem_intercompany.chem_intercompany.doc_events.stock_entry.on_submit",
 		"on_cancel": "chem_intercompany.chem_intercompany.doc_events.stock_entry.on_cancel",
 		"on_trash": "chem_intercompany.chem_intercompany.doc_events.stock_entry.on_trash",

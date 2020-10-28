@@ -5,6 +5,11 @@ from datetime import timedelta
 from chem_intercompany.controllers.batch_controller import  get_fifo_batches
 from six import itervalues
 import json
+import math
+
+def round_down(n, decimals=0):
+    multiplier = 10 ** decimals
+    return math.floor(n * multiplier) / multiplier
 
 def on_submit(self,method):
 	create_job_work_receipt_entry(self)
@@ -145,17 +150,21 @@ def job_work_repack(self):
 			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
 			for item in itervalues(item_dict):
 				item["from_warehouse"] = job_work_out_warehouse
+				item["quantity"] = item["qty"]
+				item["concentration"] = 100
 				item["cost_center"] = item["cost_center"].replace(source_abbr,target_abbr)
 				item["expense_account"] = item["expense_account"].replace(source_abbr,target_abbr)
 			se.add_to_stock_entry_detail(item_dict)
-
+			se.set_scrap_items()
+			se.set_actual_qty()
+			se.set_incoming_rate()
+			
 		else:
 			for item in self.items:	
 				se.append("items",{
 					'item_code': item.item_code,
 					's_warehouse': job_work_out_warehouse,
 					'qty': item.qty,
-					'quantity':item.quantity,
 					'short_quantity':item.short_quantity,
 					'amount_difference':item.amount_difference,
 					'basic_rate':item.basic_rate,
@@ -172,7 +181,6 @@ def job_work_repack(self):
 					'received_qty':item.received_qty,
 					'packing_size':item.packing_size,
 					'tare_weight':item.tare_weight,
-					'no_of_packages':item.no_of_packages,
 					'batch_yield':item.batch_yield,
 					'concentration':item.concentration,
 					'actual_qty':item.actual_qty,
@@ -225,80 +233,120 @@ def job_work_repack(self):
 
 		items = []
 
+		batch_utilized = {}
 		for d in se.items:
 			if not d.t_warehouse:
 				if not d.s_warehouse and not d.t_warehouse:
 					d.s_warehouse = job_work_out_warehouse
 
-			
-				has_batch_no = frappe.db.get_value('Item', d.item_code, 'has_batch_no')
-
+				has_batch_no,maintain_as_is_stock = frappe.db.get_value('Item', d.item_code, ['has_batch_no','maintain_as_is_stock'])
 				if not has_batch_no:
 					continue
 
+				batch_qty_dict = {}
+				batch_concentration_dict = {}
 				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.company)
 				if not batches:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
-
-				remaining_qty = round(flt(d.qty),2)
-				#frappe.msgprint(str(batches))
-				for i, batch in enumerate(batches):
-					if i == 0:
-						if round(batch.qty,2) >= remaining_qty:
-							d.batch_no = batch.batch_id
-							break
-
-						else:
-							if len(batches) == 1:
-								frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
-
-							remaining_qty -= flt(batch.qty)
-							d.qty = batch.qty
-							d.batch_no = batch.batch_id
-
-							items.append(frappe._dict({
-								'item_code': d.item_code,
-								's_warehouse': job_work_out_warehouse,
-								'qty': remaining_qty,
-							}))
-
-					else:
-						flag = 0
-						for x in items[:]:
-							if x.get('batch_no'):
-								continue
-
-							if batch.qty >= remaining_qty:
-								x.batch_no = batch.batch_id
-								flag = 1
+				for batch in batches:
+					batch_qty_dict.update({batch.batch_id:batch.qty})
+					batch_concentration_dict.update({batch.batch_id:batch.concentration})
+			
+				for batch, qty in batch_utilized.items():
+					batch_qty_dict[batch] = round((flt(batch_qty_dict[batch]) - round(flt(qty),2)),2)
+				
+				# remaining_qty = round(flt(d.qty),2)
+				remaining_quantity = round(flt(d.qty)*flt(d.concentration)/100,2)
+				i = 0
+				for batch, qty in batch_qty_dict.items():
+					if qty > 0:
+						concentration = flt(batch_concentration_dict[batch])
+						remaining_qty = round(flt(remaining_quantity*100 / concentration),2)
+						if i == 0:
+							if round(qty,2) >= round(remaining_qty,2):
+								d.batch_no = batch
+								d.concentration = concentration
+								d.qty = round(remaining_qty,2)
+								if maintain_as_is_stock:
+									quantity = round(d.qty * d.concentration /100,2)
+								else:
+									quantity = d.qty
+								batch_utilized[batch] = batch_utilized.get(batch,0) + remaining_qty
+								#batch_utilized.update({batch:remaining_qty})
+								
 								break
-							
+
 							else:
-								remaining_qty -= flt(batch.qty)
-								
-								x.qty = batch.qty
-								x.batch_no = batch.batch_id
-								
+								if len(batches) == 1:
+									frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+								d.batch_no = batch
+								d.qty = round(qty,2)
+								d.concentration = concentration
+								if maintain_as_is_stock:
+									quantity = round(d.qty * d.concentration /100,2)
+								else:
+									quantity = d.qty
+								remaining_qty -= round(flt(qty),2)
+								remaining_quantity -= round(flt(quantity),2)
+								batch_utilized[batch] = batch_utilized.get(batch,0) + qty
+								#batch_utilized.update({batch:qty})
+
 								items.append(frappe._dict({
 									'item_code': d.item_code,
 									's_warehouse': job_work_out_warehouse,
-									'qty': remaining_qty,
+									'qty': remaining_qty
+
 								}))
 
-						if flag:
-							break
+						else:
+							flag = 0
+							for x in items[:]:
+								if x.get('batch_no'):
+									continue
+
+								if round(qty,2) >= round(remaining_qty,2):
+									x.batch_no = batch											
+									x.concentration = concentration
+									x.qty = round(remaining_qty,2)
+									if maintain_as_is_stock:
+										quantity = round(x.qty * concentration /100,2)
+									else:
+										quantity = x.qty									
+									batch_utilized[batch] = batch_utilized.get(batch,0) + remaining_qty
+									#batch_utilized.update({batch:remaining_qty})
+									flag = 1
+									break
+								
+								else:
+									x.batch_no = batch
+									x.qty = round(qty,2)
+									x.concentration = concentration
+									if maintain_as_is_stock:
+										quantity = round(x.qty * x.concentration /100,2)
+									else:
+										quantity = x.qty										
+									remaining_qty -= round(flt(qty),2)	
+									remaining_quantity -= round(flt(quantity),2)						
+									batch_utilized[batch] = batch_utilized.get(batch,0) + qty
+									#batch_utilized.update({batch:qty})
+									items.append(frappe._dict({
+										'item_code': d.item_code,
+										's_warehouse': job_work_out_warehouse,
+										'qty': remaining_qty,
+									}))
+
+							if flag:
+								break
+						i += 1
 
 				else:
-					if remaining_qty:
+					if round_down(remaining_quantity,1):
 						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 	
 		se.extend('items', items)
 		se.save(ignore_permissions=True)
 		se.get_stock_and_rate()
 		se.save(ignore_permissions=True)
-		# frappe.msgprint(str(se.total_incoming_value))
-		# frappe.msgprint(str(se.total_outgoing_value))
-		# frappe.msgprint(str(se.value_difference))
 		se.submit()
 		
 
@@ -340,17 +388,34 @@ def get_bom_items(self):
 			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
 			for item in itervalues(item_dict):
 				item["from_warehouse"] = job_work_out_warehouse
+				item["quantity"] = item["qty"]
+				item["concentration"] = 100
 			self.add_to_stock_entry_detail(item_dict)
-
 		else:	
 			self.append("items",{
-				'item_code':  self.finish_item,
+				'item_code': item.item_code,
 				's_warehouse': job_work_out_warehouse,
-				'qty': self.fg_completed_qty,
-				'quantity': self.fg_completed_qty or self.fg_completed_quantity,
+				'qty': item.fg_completed_qty,
+				'short_quantity':item.short_quantity,
+				'basic_rate':item.basic_rate,
+				'basic_amount':item.basic_amount,
+				'additional_cost':item.additional_cost,
+				'amount':item.amount,
+				'price':item.price,
 				'uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
 				'stock_uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
-				'conversion_factor': 1,
+				'conversion_factor':1,
+				'transfer_qty':item.transfer_qty,
+				'lot_no':item.lot_no,
+				'packaging_material':item.packaging_material,
+				'received_qty':item.received_qty,
+				'packing_size':item.packing_size,
+				'tare_weight':item.tare_weight,
+				'batch_yield':item.batch_yield,
+				'concentration':item.concentration,
+				'supplier_concentration':item.supplier_concentration,
+				'supplier_quantity':item.supplier_quantity,
+				'actual_qty':item.actual_qty,
 			})
 
 		self.append("items",{
@@ -365,74 +430,117 @@ def get_bom_items(self):
 		})
 		
 		items = []
-
+		batch_utilized = {}
 		for d in self.items:
 			if not d.t_warehouse:
 				if not d.s_warehouse and not d.t_warehouse:
 					d.s_warehouse = job_work_out_warehouse
-	
-				has_batch_no = frappe.db.get_value('Item', d.item_code, 'has_batch_no')
 
+				has_batch_no,maintain_as_is_stock = frappe.db.get_value('Item', d.item_code, ['has_batch_no','maintain_as_is_stock'])
 				if not has_batch_no:
 					continue
 
+				batch_qty_dict = {}
+				batch_concentration_dict = {}
 				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.party)
 				if not batches:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
-
-				remaining_qty = d.qty
-
-				for i, batch in enumerate(batches):
-					if i == 0:
-						if batch.qty >= remaining_qty:
-							d.batch_no = batch.batch_id
-							break
-
-						else:
-							if len(batches) == 1:
-								frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
-
-							remaining_qty -= flt(batch.qty)
-							d.qty = batch.qty
-							d.batch_no = batch.batch_id
-
-							items.append(frappe._dict({
-								'item_code': d.item_code,
-								's_warehouse': job_work_out_warehouse,
-								'qty': remaining_qty,
-							}))
-
-					else:
-						flag = 0
-						for x in items[:]:
-							if x.get('batch_no'):
-								continue
-
-							if batch.qty >= remaining_qty:
-								x.batch_no = batch.batch_id
-								flag = 1
-								break
-							
-							else:
-								remaining_qty -= flt(batch.qty)
+				for batch in batches:
+					batch_qty_dict.update({batch.batch_id:batch.qty})
+					batch_concentration_dict.update({batch.batch_id:batch.concentration})
+			
+				for batch, qty in batch_utilized.items():
+					if batch_qty_dict.get(batch):
+						batch_qty_dict[batch] = round((flt(batch_qty_dict[batch]) - round(flt(qty),2)),2)
+				
+				concentration = d.concentration or 100
+				
+				remaining_quantity = round(flt(d.qty)*flt(concentration)/100,2)
+				i = 0
+				for batch, qty in batch_qty_dict.items():
+					if qty > 0:
+						concentration = flt(batch_concentration_dict[batch])
+						remaining_qty = round(flt(remaining_quantity*100 / concentration),2)
+						if i == 0:
+							if round(qty,2) >= round(remaining_qty,2):
+								d.batch_no = batch
+								d.concentration = concentration
+								d.qty = round(remaining_qty,2)
+								if maintain_as_is_stock:
+									quantity = round(d.qty * d.concentration /100,2)
+								else:
+									quantity = d.qty
 								
-								x.qty = batch.qty
-								x.batch_no = batch.batch_id
+								frappe.msgprint('qty'+ str(d.qty))
+								batch_utilized[batch] = batch_utilized.get(batch,0) + remaining_qty
+							
+								break
+
+							else:
+								if len(batches) == 1:
+									frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+								d.batch_no = batch
+								d.qty = round(qty,2)
+								d.concentration = concentration
+								if maintain_as_is_stock:
+									quantity = round(d.qty * d.concentration /100,2)
+								else:
+									quantity = d.qty
+								remaining_qty -= round(flt(qty),2)
+								remaining_quantity -= round(flt(quantity),2)
+								batch_utilized[batch] = batch_utilized.get(batch,0) + qty
 								
 								items.append(frappe._dict({
 									'item_code': d.item_code,
 									's_warehouse': job_work_out_warehouse,
-									'qty': remaining_qty,
+									'qty': remaining_qty
+
 								}))
 
-						if flag:
-							break
+						else:
+							flag = 0
+							for x in items[:]:
+								if x.get('batch_no'):
+									continue
+
+								if round(qty,2) >= round(remaining_qty,2):
+									x.batch_no = batch											
+									x.concentration = concentration
+									x.qty = round(remaining_qty,2)
+									if maintain_as_is_stock:
+										quantity = round(x.qty * concentration /100,2)
+									else:
+										quantity = x.qty									
+									batch_utilized[batch] = batch_utilized.get(batch,0) + remaining_qty
+									
+									flag = 1
+									break
+								
+								else:
+									x.batch_no = batch
+									x.qty = round(qty,2)
+									x.concentration = concentration
+									if maintain_as_is_stock:
+										quantity = round(x.qty * x.concentration /100,2)
+									else:
+										quantity = x.qty										
+									remaining_qty -= round(flt(qty),2)	
+									remaining_quantity -= round(flt(quantity),2)						
+									batch_utilized[batch] = batch_utilized.get(batch,0) + qty
+									
+									items.append(frappe._dict({
+										'item_code': d.item_code,
+										's_warehouse': job_work_out_warehouse,
+										'qty': remaining_qty,
+									}))
+
+							if flag:
+								break
+						i += 1
 
 				else:
-					if remaining_qty:
+					if round_down(remaining_quantity,1):
 						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 
-		#return items
 		self.extend('items', items)
-		#self.save()
 
