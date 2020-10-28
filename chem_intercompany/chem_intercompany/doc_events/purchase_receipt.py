@@ -63,6 +63,7 @@ def create_stock_entry(self):
 		se.shipping_address = self.shipping_address_display
 		se.purchase_receipt_number = self.name
 		se.letter_head = frappe.db.get_value("Company",self.company,'default_letter_head')
+		se.weighing_slip = self.weighing_slip
 		for row in self.items:
 			if not row.warehouse:
 				frappe.throw(_("Please set Warehouse for item {}".format(row.item_code)))
@@ -81,6 +82,7 @@ def create_stock_entry(self):
 				'qty': row.qty,
 				'quantity':row.quantity,
 				'short_quantity':row.short_quantity,
+				'amount_difference':row.amount_difference,
 				'basic_rate':row.rate,
 				'amount':row.amount,
 				'price':row.price,
@@ -91,9 +93,13 @@ def create_stock_entry(self):
 				'supplier_qty':row.supplier_qty,
 				'supplier_quantity':row.supplier_quantity,
 				'supplier_concentration':row.supplier_concentration,
+				'supplier_no_of_packages':row.supplier_no_of_packages,
+				'supplier_packing_size':row.supplier_packing_size,
 				'accepted_qty':row.accepted_qty,
 				'accepted_quantity':row.accepted_quantity,
 				'accepted_concentration':row.accepted_concentration,
+				'accepted_packing_size':row.accepted_packing_size,
+				'accepted_no_of_packages':row.accepted_no_of_packages,
 				'receive_packing_size':row.receive_packing_size,
 				'receive_no_of_packages':row.receive_no_of_packages,
 				'receive_qty':row.receive_qty,
