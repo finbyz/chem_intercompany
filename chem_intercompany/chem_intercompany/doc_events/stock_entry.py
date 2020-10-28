@@ -344,7 +344,6 @@ def job_work_repack(self):
 						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 	
 		se.extend('items', items)
-		se.save(ignore_permissions=True)
 		se.get_stock_and_rate()
 		se.save(ignore_permissions=True)
 		se.submit()
@@ -462,7 +461,7 @@ def get_bom_items(self):
 						concentration = flt(batch_concentration_dict[batch])
 						remaining_qty = round(flt(remaining_quantity*100 / concentration),2)
 						if i == 0:
-							if round(qty,2) >= round_down(remaining_qty,1)::
+							if round(qty,2) >= round_down(remaining_qty,1):
 								d.batch_no = batch
 								d.concentration = concentration
 								d.qty = min(round(remaining_qty,2),round(qty,2))
@@ -503,7 +502,7 @@ def get_bom_items(self):
 								if x.get('batch_no'):
 									continue
 
-								if round(qty,2) >= round_down(remaining_qty,1)::
+								if round(qty,2) >= round_down(remaining_qty,1):
 									x.batch_no = batch											
 									x.concentration = concentration
 									x.qty = min(round(remaining_qty,2),round(qty,2))
