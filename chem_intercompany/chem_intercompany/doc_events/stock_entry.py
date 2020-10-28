@@ -344,7 +344,6 @@ def job_work_repack(self):
 						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 	
 		se.extend('items', items)
-		se.save(ignore_permissions=True)
 		se.get_stock_and_rate()
 		se.save(ignore_permissions=True)
 		se.submit()
