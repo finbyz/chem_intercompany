@@ -238,7 +238,7 @@ def job_work_repack(self):
 			})
 
 		items = []
-
+		final_items = []
 		batch_utilized = {}
 		for d in se.items:
 			if not d.t_warehouse:
@@ -253,7 +253,11 @@ def job_work_repack(self):
 				batch_concentration_dict = {}
 				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.company)
 				if not batches:
-					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+					if self.allow_short_qty_consumption:
+						frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+					else:
+						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+
 				for batch in batches:
 					batch_qty_dict.update({batch.batch_id:batch.qty})
 					batch_concentration_dict.update({batch.batch_id:batch.concentration})
@@ -284,7 +288,10 @@ def job_work_repack(self):
 
 							else:
 								if len(batches) == 1:
-									frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+									if self.allow_short_qty_consumption:
+										frappe.msgprint(_("MSG Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+									else:
+										frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 								d.batch_no = batch
 								d.qty = round(qty,2)
 								d.concentration = concentration
@@ -347,9 +354,15 @@ def job_work_repack(self):
 
 				else:
 					if round_down(remaining_quantity,1):
-						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
-	
-		se.extend('items', items)
+						if self.allow_short_qty_consumption:
+							frappe.msgprint(_("msg Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+						else:
+							frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+		
+
+		final_items = [i for i in items if 'batch_no' in i.keys()]
+		self.extend('items', final_items)
+
 		se.get_stock_and_rate()
 		se.save(ignore_permissions=True)
 		se.submit()
@@ -435,6 +448,7 @@ def get_bom_items(self):
 		})
 		
 		items = []
+		final_items = []
 		batch_utilized = {}
 		for d in self.items:
 			if not d.t_warehouse:
@@ -449,7 +463,10 @@ def get_bom_items(self):
 				batch_concentration_dict = {}
 				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.party)
 				if not batches:
-					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+					if self.allow_short_qty_consumption:
+						frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+					else:
+						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 				for batch in batches:
 					batch_qty_dict.update({batch.batch_id:batch.qty})
 					batch_concentration_dict.update({batch.batch_id:batch.concentration})
@@ -483,7 +500,10 @@ def get_bom_items(self):
 
 							else:
 								if len(batches) == 1:
-									frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+									if self.allow_short_qty_consumption:
+										frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+									# else:
+									# 	frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 								d.batch_no = batch
 								d.qty = round(qty,2)
 								d.concentration = concentration
@@ -545,7 +565,12 @@ def get_bom_items(self):
 
 				else:
 					if round_down(remaining_quantity,1):
-						frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
-
-		self.extend('items', items)
+						if self.allow_short_qty_consumption:
+							frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+						else:
+							frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+		
+		final_items = [i for i in items if 'batch_no' in i.keys()] 
+		
+		self.extend('items', final_items)
 
