@@ -52,6 +52,9 @@ def create_job_work_receipt_entry(self):
 		se.to_warehouse = self.to_company_receive_warehouse or job_work_warehouse
 		se.letter_head = frappe.db.get_value("Company",self.party,'default_letter_head')
 		se.jobwork_invoice_no = self.jobwork_invoice_no
+		se.jobwork_invoice_amount = self.jobwork_invoice_amount
+		se.jobwork_challan_no = self.jobwork_challan_no
+		
 		if self.amended_from:
 			se.amended_from = frappe.db.get_value("Stock Entry", {'jw_ref': self.amended_from}, "name")
 		for row in self.items:
@@ -144,6 +147,9 @@ def job_work_repack(self):
 		job_work_out_warehouse = frappe.db.get_value('Company',self.party,'job_work_out_warehouse')
 		job_work_in_warehouse = frappe.db.get_value('Company',self.party,'job_work_warehouse')
 		expense_account = frappe.db.get_value('Company',self.party,'job_work_difference_account')
+		se.jobwork_invoice_no = self.jobwork_invoice_no
+		se.jobwork_invoice_amount = self.jobwork_invoice_amount
+		se.jobwork_challan_no = self.jobwork_challan_no
 
 
 		if self.bom_no:

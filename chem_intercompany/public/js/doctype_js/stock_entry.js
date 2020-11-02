@@ -29,7 +29,10 @@ frappe.ui.form.on('Stock Entry', {
                 if (frm.doc.stock_entry_type == "Send to Jobwork" || frm.doc.stock_entry_type == "Receive Jobwork Raw Material") {
                     frm.set_value("jw_ref", null);
                 }
-            } 
+            }
+            if(frm.doc.docstatus == 0){
+                frm.trigger('stock_entry_type')
+            }
         }
     },
     validate: function (frm) { 
@@ -131,5 +134,14 @@ frappe.ui.form.on('Stock Entry', {
                // console.log(r.message)
             }
         });
+    }
+});
+
+frappe.ui.form.on("Stock Entry Detail", {
+    form_render:function(frm,cdt,cdn){
+        frm.events.stock_entry_type(frm)
+    },
+    item_code: function(frm,cdt,cdn){
+        frm.events.stock_entry_type(frm)
     }
 });
