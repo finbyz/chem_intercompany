@@ -355,7 +355,7 @@ def job_work_repack(self):
 				else:
 					if round_down(remaining_quantity,1):
 						if self.allow_short_qty_consumption:
-							frappe.msgprint(_("msg Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
+							frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 						else:
 							frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 		
@@ -493,7 +493,6 @@ def get_bom_items(self):
 								else:
 									quantity = d.qty
 								
-								frappe.msgprint('qty'+ str(d.qty))
 								batch_utilized[batch] = batch_utilized.get(batch,0) + remaining_qty
 							
 								break
