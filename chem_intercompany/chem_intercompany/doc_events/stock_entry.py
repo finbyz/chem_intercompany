@@ -2,7 +2,7 @@ import frappe
 from frappe import msgprint, _
 from frappe.utils import flt
 from datetime import timedelta
-from chem_intercompany.controllers.batch_controller import  get_fifo_batches
+from chem_intercompany.controllers.batch_controller import  get_fifo_batches, get_qty_from_sle
 from six import itervalues
 import json
 import math
@@ -450,6 +450,7 @@ def get_bom_items(self):
 		items = []
 		final_items = []
 		batch_utilized = {}
+		
 		for d in self.items:
 			if not d.t_warehouse:
 				if not d.s_warehouse and not d.t_warehouse:
@@ -457,7 +458,15 @@ def get_bom_items(self):
 
 				has_batch_no,maintain_as_is_stock = frappe.db.get_value('Item', d.item_code, ['has_batch_no','maintain_as_is_stock'])
 				if not has_batch_no:
-					continue
+					if self.allow_short_qty_consumption:
+						item_qty = get_qty_from_sle(d.item_code, d.s_warehouse, self.party,self.posting_date, self.posting_time)
+						frappe.msgprint(str(item_qty))
+						if item_qty == 0:
+							self.remove(d)
+						elif d.qty > item_qty:
+							d.qty = item_qty
+						else:
+							continue
 
 				batch_qty_dict = {}
 				batch_concentration_dict = {}
@@ -568,8 +577,10 @@ def get_bom_items(self):
 							frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 						else:
 							frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
-		
-		final_items = [i for i in items if 'batch_no' in i.keys()] 
-		
-		self.extend('items', final_items)
+				
+				if not d.batch_no and self.allow_short_qty_consumption:
+					self.remove(d)
 
+		final_items = [i for i in items if 'batch_no' in i.keys()] 
+		self.extend('items', final_items)
+		
