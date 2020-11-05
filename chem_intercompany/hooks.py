@@ -78,6 +78,9 @@ doc_events = {
 		"on_trash": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_trash"
 	},
 }
+override_doctype_dashboards = {
+	"Purchase Receipt":"chem_intercompany.chem_intercompany.dashboard.purchase_receipt.get_data"
+}
 # Home Pages
 # ----------
 

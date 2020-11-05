@@ -251,7 +251,7 @@ def job_work_repack(self):
 
 				batch_qty_dict = {}
 				batch_concentration_dict = {}
-				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.company)
+				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.company,self.posting_date, self.posting_time)
 				if not batches:
 					if self.allow_short_qty_consumption:
 						frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
@@ -461,7 +461,7 @@ def get_bom_items(self):
 
 				batch_qty_dict = {}
 				batch_concentration_dict = {}
-				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.party)
+				batches = get_fifo_batches(d.item_code, d.s_warehouse, self.party,self.posting_date, self.posting_time)
 				if not batches:
 					if self.allow_short_qty_consumption:
 						frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
