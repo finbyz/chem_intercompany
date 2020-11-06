@@ -526,8 +526,9 @@ def get_bom_items(self):
 								items.append(frappe._dict({
 									'item_code': d.item_code,
 									's_warehouse': job_work_out_warehouse,
-									'qty': remaining_qty
-
+									'qty': remaining_qty,
+									'uom': d.uom,
+									'stock_uom': d.stock_uom
 								}))
 
 						else:
@@ -565,6 +566,8 @@ def get_bom_items(self):
 										'item_code': d.item_code,
 										's_warehouse': job_work_out_warehouse,
 										'qty': remaining_qty,
+										'uom': d.uom,
+										'stock_uom': d.stock_uom
 									}))
 
 							if flag:
