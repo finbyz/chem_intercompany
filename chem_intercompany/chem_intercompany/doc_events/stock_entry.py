@@ -450,6 +450,7 @@ def get_bom_items(self):
 		items = []
 		final_items = []
 		batch_utilized = {}
+		to_remove = []
 		
 		for d in self.items:
 			if not d.t_warehouse:
@@ -461,7 +462,7 @@ def get_bom_items(self):
 					if self.allow_short_qty_consumption:
 						item_qty = get_qty_from_sle(d.item_code, d.s_warehouse, self.party,self.posting_date, self.posting_time)
 						if item_qty == 0:
-							self.remove(d)
+							to_remove.append(d)
 						elif d.qty > item_qty:
 							d.qty = item_qty
 						else:
@@ -579,8 +580,15 @@ def get_bom_items(self):
 							frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse))))
 				
 				if not d.batch_no and self.allow_short_qty_consumption:
-					self.remove(d)
-
+					to_remove.append(d)
+		
 		final_items = [i for i in items if 'batch_no' in i.keys()] 
+		
+		for item in self.items:
+			if item not in to_remove:
+				final_items.append(item)
+
+		self.items = []
+
 		self.extend('items', final_items)
 		
