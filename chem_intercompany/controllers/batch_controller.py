@@ -10,7 +10,7 @@ def get_fifo_batches(item_code, warehouse, party, posting_date, posting_time):
 			bt.batch_id, sum(sle.actual_qty) as qty, bt.concentration
 		from `tabBatch` as bt
 		join `tabStock Ledger Entry` as sle ignore index (item_code, warehouse) 
-		on (bt.batch_id = sle.batch_no )
+		on (bt.batch_id = sle.batch_no)
 		JOIN `tabStock Entry` as se ON se.name = sle.voucher_no
 		where 
 			sle.item_code = %s 
@@ -21,6 +21,33 @@ def get_fifo_batches(item_code, warehouse, party, posting_date, posting_time):
 		group by sle.batch_no
 		having sum(sle.actual_qty) > 0 
 		order by sle.posting_date, bt.name """, (item_code, warehouse, party, posting_date, posting_time), as_dict=True)
+
+	batches_now_date = frappe.db.sql("""
+		select 
+			bt.batch_id, sum(sle.actual_qty) as qty, bt.concentration
+		from `tabBatch` as bt
+		join `tabStock Ledger Entry` as sle ignore index (item_code, warehouse) 
+		on (bt.batch_id = sle.batch_no)
+		JOIN `tabStock Entry` as se ON se.name = sle.voucher_no
+		where 
+			sle.item_code = %s 
+			and sle.warehouse = %s 
+			and (bt.expiry_date >= CURDATE() or bt.expiry_date IS NULL)
+			and se.party = %s
+		group by sle.batch_no
+		having sum(sle.actual_qty) > 0 
+		order by sle.posting_date, bt.name """, (item_code, warehouse, party), as_dict=True)
+
+	batches_nowdate_dict = {}
+	for batch in batches_now_date:
+		batches_nowdate_dict.update({batch.batch_id:batch.qty})
+
+	for batch in batches:
+		if batches_nowdate_dict.get(batch.batch_id):
+			if batch.qty > batches_nowdate_dict[batch.batch_id]:
+				batch.qty = batches_nowdate_dict[batch.batch_id]
+		else:
+			batches.remove(batch)
 
 	return batches
 
