@@ -82,7 +82,7 @@ def create_job_work_receipt_entry(self):
 				'tare_weight':row.tare_weight,
 				'no_of_packages':row.no_of_packages,
 				'batch_yield':row.batch_yield,
-				'concentration':row.concentration,
+				'concentration': row.party_concentration or row.concentration,
 				'actual_qty':row.actual_qty,
 				'expense_account': expense_account,
 				'cost_center': row.cost_center.replace(source_abbr, target_abbr),
