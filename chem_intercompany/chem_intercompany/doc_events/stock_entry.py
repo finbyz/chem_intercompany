@@ -151,7 +151,7 @@ def job_work_repack(self):
 		se.jobwork_invoice_amount = self.jobwork_invoice_amount
 		se.jobwork_challan_no = self.jobwork_challan_no
 
-
+		
 		if self.bom_no:
 			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
 			for item in itervalues(item_dict):
@@ -171,6 +171,7 @@ def job_work_repack(self):
 					'item_code': item.item_code,
 					's_warehouse': job_work_out_warehouse,
 					'qty': item.qty,
+					'quantity': item.quantity,
 					'short_quantity':item.short_quantity,
 					'amount_difference':item.amount_difference,
 					'basic_rate':item.basic_rate,
@@ -229,14 +230,14 @@ def job_work_repack(self):
 				'batch_yield': item.batch_yield,
 				'concentration': item.concentration
 			})
-
+		
 		for row in self.additional_costs:
 			se.append("additional_costs",{
 				'expense_account': row.expense_account.replace(source_abbr,target_abbr),
 				'description': row.description,
 				'amount': row.amount
 			})
-		job_work_item_reset(self,job_work_out_warehouse,self.company)
+		job_work_item_reset(se,job_work_out_warehouse,self.company)
 		se.get_stock_and_rate()
 		se.save(ignore_permissions=True)
 		se.submit()
@@ -332,7 +333,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 		if not d.t_warehouse:
 			if not d.s_warehouse and not d.t_warehouse:
 				d.s_warehouse = job_work_out_warehouse
-
+			
 			has_batch_no,maintain_as_is_stock = frappe.db.get_value('Item', d.item_code, ['has_batch_no','maintain_as_is_stock'])
 			if not has_batch_no:
 				item_qty = get_qty_from_sle(d.item_code, d.s_warehouse, party,self.posting_date, self.posting_time)
