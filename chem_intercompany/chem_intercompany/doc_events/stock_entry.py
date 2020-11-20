@@ -183,6 +183,7 @@ def job_work_repack(self):
 					'stock_uom':item.stock_uom,
 					'conversion_factor':item.conversion_factor,
 					'transfer_qty':item.transfer_qty,
+					'batch_no':item.batch_no,
 					'lot_no':item.lot_no,
 					'packaging_material':item.packaging_material,
 					'received_qty':item.received_qty,
@@ -299,12 +300,12 @@ def get_bom_items(self):
 				'stock_uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
 				'conversion_factor':1,
 				'transfer_qty':item.transfer_qty,
+				'batch_no':item.batch_no,
 				'lot_no':item.lot_no,
 				'packaging_material':item.packaging_material,
 				'received_qty':item.received_qty,
 				'packing_size':item.packing_size,
 				'tare_weight':item.tare_weight,
-				'batch_yield':item.batch_yield,
 				'concentration':item.concentration,
 				'supplier_concentration':item.supplier_concentration,
 				'supplier_quantity':item.supplier_quantity,
@@ -315,7 +316,7 @@ def get_bom_items(self):
 			'item_code': self.finish_item,
 			't_warehouse': self.to_company_receive_warehouse or job_work_in_warehouse,
 			'qty': self.fg_completed_qty,
-			'quantity': self.fg_completed_qty or self.fg_completed_quantity,
+			'quantity': self.fg_completed_quantity or self.fg_completed_qty,
 			'uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
 			'stock_uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
 			'conversion_factor': 1,
@@ -353,6 +354,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 				continue
 
 			batch_qty_dict = {}
+			batch_qty_dict_post = {}
 			batch_concentration_dict = {}
 			batches = get_fifo_batches(d.item_code, d.s_warehouse, party ,self.posting_date, self.posting_time)
 			
@@ -360,9 +362,12 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 				if not self.allow_short_qty_consumption:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse for party {}.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse),party)))
 			for batch in batches:
-				batch_qty_dict.update({batch.batch_id:batch.qty})
+				if batch.batch_id == d.batch_no:
+					batch_qty_dict.update({batch.batch_id:batch.qty})
+				else:
+					batch_qty_dict_post.update({batch.batch_id:batch.qty})
 				batch_concentration_dict.update({batch.batch_id:batch.concentration})
-		
+			batch_qty_dict.update(batch_qty_dict_post)
 			for batch, qty in batch_utilized.items():
 				if batch_qty_dict.get(batch):
 					batch_qty_dict[batch] = round((flt(batch_qty_dict[batch]) - round(flt(qty),2)),2)
@@ -381,9 +386,9 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 							d.concentration = concentration
 							d.qty = min(round(remaining_qty,2),round(qty,2))
 							if maintain_as_is_stock:
-								quantity = round(d.qty * d.concentration /100,2)
+								d.quantity = round(d.qty * d.concentration /100,2)
 							else:
-								quantity = d.qty
+								d.quantity = d.qty
 							
 							batch_utilized[batch] = batch_utilized.get(batch,0) + remaining_qty
 						
@@ -398,18 +403,20 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 							d.qty = round(qty,2)
 							d.concentration = concentration
 							if maintain_as_is_stock:
-								quantity = round(d.qty * d.concentration /100,2)
+								d.quantity = round(d.qty * d.concentration /100,2)
 							else:
-								quantity = d.qty
+								d.quantity = d.qty
 							remaining_qty -= round(flt(qty),2)
-							remaining_quantity -= round(flt(quantity),2)
+							remaining_quantity -= round(flt(d.quantity),2)
 							batch_utilized[batch] = batch_utilized.get(batch,0) + qty
 							
 							items.append(frappe._dict({
 								'item_code': d.item_code,
 								's_warehouse': job_work_out_warehouse,
-								'qty': remaining_qty
-
+								'qty': remaining_qty,
+								'uom': d.uom,
+								'stock_uom': d.stock_uom,
+								'conversion_factor': d.conversion_factor,
 							}))
 
 					else:
@@ -447,6 +454,9 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 									'item_code': d.item_code,
 									's_warehouse': job_work_out_warehouse,
 									'qty': remaining_qty,
+									'uom': d.uom,
+									'stock_uom': d.stock_uom,
+									'conversion_factor': d.conversion_factor,
 								}))
 
 						if flag:
@@ -467,7 +477,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 	
 	for item in self.items:
 		if item not in to_remove:
-			final_items.append(item)
+			final_items.append(item.__dict__)
 
 	self.items = []
 
