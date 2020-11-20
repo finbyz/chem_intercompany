@@ -385,11 +385,11 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 							d.batch_no = batch
 							d.concentration = concentration
 							d.qty = min(round(remaining_qty,2),round(qty,2))
+							d.quantity = 0 # to avoid calculation of qty from quantity
 							if maintain_as_is_stock:
-								d.quantity = round(d.qty * d.concentration /100,2)
+								quantity = round(d.qty * d.concentration /100,2)
 							else:
-								d.quantity = d.qty
-							
+								quantity = d.qty
 							batch_utilized[batch] = batch_utilized.get(batch,0) + remaining_qty
 						
 							break
@@ -402,12 +402,14 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 							d.batch_no = batch
 							d.qty = round(qty,2)
 							d.concentration = concentration
+							d.quantity = 0 # to avoid calculation of qty from quantity
 							if maintain_as_is_stock:
-								d.quantity = round(d.qty * d.concentration /100,2)
+								quantity = round(d.qty * d.concentration /100,2)
 							else:
-								d.quantity = d.qty
+								quantity = d.qty
+
 							remaining_qty -= round(flt(qty),2)
-							remaining_quantity -= round(flt(d.quantity),2)
+							remaining_quantity -= round(flt(quantity),2)
 							batch_utilized[batch] = batch_utilized.get(batch,0) + qty
 							
 							items.append(frappe._dict({
