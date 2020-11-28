@@ -285,32 +285,33 @@ def get_bom_items(self):
 				item["quantity"] = item["qty"]
 				item["concentration"] = 100
 			self.add_to_stock_entry_detail(item_dict)
-		else:	
-			self.append("items",{
-				'item_code': item.item_code,
-				's_warehouse': job_work_out_warehouse,
-				'qty': item.fg_completed_qty,
-				'short_quantity':item.short_quantity,
-				'basic_rate':item.basic_rate,
-				'basic_amount':item.basic_amount,
-				'additional_cost':item.additional_cost,
-				'amount':item.amount,
-				'price':item.price,
-				'uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
-				'stock_uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
-				'conversion_factor':1,
-				'transfer_qty':item.transfer_qty,
-				'batch_no':item.batch_no,
-				'lot_no':item.lot_no,
-				'packaging_material':item.packaging_material,
-				'received_qty':item.received_qty,
-				'packing_size':item.packing_size,
-				'tare_weight':item.tare_weight,
-				'concentration':item.concentration,
-				'supplier_concentration':item.supplier_concentration,
-				'supplier_quantity':item.supplier_quantity,
-				'actual_qty':item.actual_qty,
-			})
+		else:
+			for item in self.items:
+				self.append("items",{
+					'item_code': item.item_code,
+					's_warehouse': job_work_out_warehouse,
+					'qty': item.fg_completed_qty,
+					'short_quantity':item.short_quantity,
+					'basic_rate':item.basic_rate,
+					'basic_amount':item.basic_amount,
+					'additional_cost':item.additional_cost,
+					'amount':item.amount,
+					'price':item.price,
+					'uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
+					'stock_uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
+					'conversion_factor':1,
+					'transfer_qty':item.transfer_qty,
+					'batch_no':item.batch_no,
+					'lot_no':item.lot_no,
+					'packaging_material':item.packaging_material,
+					'received_qty':item.received_qty,
+					'packing_size':item.packing_size,
+					'tare_weight':item.tare_weight,
+					'concentration':item.concentration,
+					'supplier_concentration':item.supplier_concentration,
+					'supplier_quantity':item.supplier_quantity,
+					'actual_qty':item.actual_qty,
+				})
 
 		self.append("items",{
 			'item_code': self.finish_item,
