@@ -16,6 +16,16 @@ def on_trash(self,method):
 			doc.db_set('reference_name', None)
 		#	frappe.db.set_value("Batch",row.batch_no,'reference_name',None)
 
+def on_update_after_submit(self,method):
+	update_party(self)
+
+def update_party(self):
+	if self.send_to_party and self.party_type == "Company":
+		if frappe.db.exists("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.company}):
+			se = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.company})
+			se.flags.ignore_permissions = True
+			se.db_set('party',self.party)
+			
 def create_stock_entry(self):
 	if self.send_to_party:
 		source_abbr = frappe.db.get_value("Company", self.company,'abbr')

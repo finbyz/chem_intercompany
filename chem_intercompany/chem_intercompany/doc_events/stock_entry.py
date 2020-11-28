@@ -145,7 +145,7 @@ def job_work_repack(self):
 		source_abbr = frappe.db.get_value('Company',self.company,'abbr')
 		target_abbr = frappe.db.get_value('Company',self.party,'abbr')
 		job_work_out_warehouse = frappe.db.get_value('Company',self.party,'job_work_out_warehouse')
-		job_work_in_warehouse = frappe.db.get_value('Company',self.party,'job_work_warehouse')
+		job_work_in_warehouse = frappe.db.get_value('Company',self.party,'default_warehouse')
 		expense_account = frappe.db.get_value('Company',self.party,'job_work_difference_account')
 		se.jobwork_invoice_no = self.jobwork_invoice_no
 		se.jobwork_invoice_amount = self.jobwork_invoice_amount

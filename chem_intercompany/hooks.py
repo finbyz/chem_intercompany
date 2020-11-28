@@ -75,7 +75,8 @@ doc_events = {
 	"Purchase Receipt":{
 		"on_submit": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_submit",
 		"before_cancel": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_cancel",
-		"on_trash": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_trash"
+		"on_trash": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_trash",
+		"on_update_after_submit": "chem_intercompany.chem_intercompany.doc_events.purchase_receipt.on_update_after_submit"
 	},
 }
 override_doctype_dashboards = {
