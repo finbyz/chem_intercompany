@@ -141,6 +141,7 @@ def job_work_repack(self):
 		se.receive_from_party = 1
 		se.party_type = self.party_type
 		se.party = self.company
+		se.allow_short_qty_consumption = self.allow_short_qty_consumption
 		se.letter_head = frappe.db.get_value("Company",self.party,'default_letter_head')
 		source_abbr = frappe.db.get_value('Company',self.company,'abbr')
 		target_abbr = frappe.db.get_value('Company',self.party,'abbr')
@@ -363,7 +364,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 				if not self.allow_short_qty_consumption:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse for party {}.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse),party)))
 			for batch in batches:
-				if batch.batch_id == d.batch_no:
+				if batch.batch_id == d.batch_no or batch.lot_no == d.lot_no:
 					batch_qty_dict.update({batch.batch_id:batch.qty})
 				else:
 					batch_qty_dict_post.update({batch.batch_id:batch.qty})
