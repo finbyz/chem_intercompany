@@ -39,17 +39,18 @@ def get_fifo_batches(item_code, warehouse, party, posting_date, posting_time):
 		order by sle.posting_date, bt.name """, (item_code, warehouse, party), as_dict=True)
 
 	batches_nowdate_dict = {}
-	for batch in batches_now_date:
-		batches_nowdate_dict.update({batch.batch_id:batch.qty})
+	final_bacthes = []
 
+	for bt in batches_now_date:
+		batches_nowdate_dict.update({bt.batch_id:bt.qty})
+	
 	for batch in batches:
-		if batches_nowdate_dict.get(batch.batch_id):
-			if batch.qty > batches_nowdate_dict[batch.batch_id]:
-				batch.qty = batches_nowdate_dict[batch.batch_id]
-		else:
-			batches.remove(batch)
+		if batches_nowdate_dict.get(batch.get('batch_id')):
+			if batch.get('qty') > batches_nowdate_dict[batch.get('batch_id')]:
+				batch.qty = batches_nowdate_dict[batch.get('batch_id')]
+			final_bacthes.append(batch)	
 
-	return batches
+	return final_bacthes
 
 def get_qty_from_sle(item_code, warehouse, party, posting_date, posting_time):
 	qty = frappe.db.sql("""
