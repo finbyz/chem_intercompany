@@ -44,7 +44,7 @@ frappe.ui.form.on('Stock Entry', {
         if(frm.doc.stock_entry_type == "Send Jobwork Finish") {
            // frm.set_value('from_bom',1)
         }
-        if(frm.doc.purpose == "Material Transfer" ){
+        if(frm.doc.purpose == "Material Transfer" || frm.doc.purpose == "Material Issue"){
             frappe.meta.get_docfield("Stock Entry Detail","party_concentration", cur_frm.doc.name).hidden = 0;
         }
         else{

@@ -230,7 +230,7 @@ def job_work_repack(self):
 				'packing_size': item.packing_size,
 				'no_of_packages': item.no_of_packages,
 				'batch_yield': item.batch_yield,
-				'concentration': item.concentration
+				'concentration': item.party_concentration or  item.concentration
 			})
 		
 		for row in self.additional_costs:
