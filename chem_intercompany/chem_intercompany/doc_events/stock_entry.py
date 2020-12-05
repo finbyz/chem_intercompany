@@ -371,7 +371,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 			batch_qty_dict.update(batch_qty_dict_post)
 			for batch, qty in batch_utilized.items():
 				if batch_qty_dict.get(batch):
-					batch_qty_dict[batch] = round((flt(batch_qty_dict[batch]) - round(flt(qty),2)),2)
+					batch_qty_dict[batch] = (flt(batch_qty_dict[batch]) - flt(qty))
 			
 			concentration = d.concentration or 100
 			remaining_quantity = round(flt(d.qty)*flt(concentration)/100,2)
@@ -386,10 +386,10 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 						remaining_qty = round(flt(remaining_quantity),2)
 				
 					if i == 0:
-						if round(qty,2) >= round_down(remaining_qty,1):
+						if qty >= remaining_qty:
 							d.batch_no = batch
 							d.concentration = concentration
-							d.qty = min(round(remaining_qty,2),round(qty,2))
+							d.qty = min(remaining_qty,qty)
 							d.quantity = 0 # to avoid calculation of qty from quantity
 							if maintain_as_is_stock:
 								quantity = round(d.qty * d.concentration /100,2)
@@ -405,7 +405,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 									frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse for party {}.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse),party)))
 							
 							d.batch_no = batch
-							d.qty = round(qty,2)
+							d.qty = qty
 							d.concentration = concentration
 							d.quantity = 0 # to avoid calculation of qty from quantity
 							if maintain_as_is_stock:
@@ -432,11 +432,11 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 							if x.get('batch_no'):
 								continue
 
-							if round(qty,2) >= round_down(remaining_qty,1):
+							if qty >= remaining_qty:
 								x.batch_no = batch											
 								x.concentration = concentration
 							
-								x.qty = min(round(remaining_qty,2),round(qty,2))
+								x.qty = min(remaining_qty,qty)
 								if maintain_as_is_stock:
 									quantity = round((x.qty * concentration /100),2)
 								else:
@@ -448,7 +448,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 
 							else:
 								x.batch_no = batch
-								x.qty = round(qty,2)
+								x.qty = qty
 								x.concentration = concentration
 								if maintain_as_is_stock:
 									quantity = round((x.qty * x.concentration /100),2)
