@@ -19,6 +19,28 @@ frappe.ui.form.on('Stock Entry', {
                 }
             }
         };
+        if (frm.doc.stock_entry_type == "Send Jobwork Finish"){
+            frm.set_query("batch_no", "items", function (doc, cdt, cdn) {
+                let d = locals[cdt][cdn];
+                if (!d.item_code) {
+                    frappe.msgprint(__("Please select Item Code"));
+                }
+                else if (!d.s_warehouse) {
+                    frappe.msgprint(__("Please select source warehouse"));
+                }
+                else {
+                    return {
+                        query: "chem_intercompany.api.get_challan_no",
+                        filters: {
+                            'item_code': d.item_code,
+                            'warehouse': d.s_warehouse,
+                            'posting_date':frm.doc.posting_date,
+                            'posting_time':frm.doc.posting_time
+                        }
+                    }
+                }
+            });
+        }
         if (frm.doc.docstatus == 0){
             frm.trigger('stock_entry_type')
         }  

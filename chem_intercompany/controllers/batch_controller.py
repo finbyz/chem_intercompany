@@ -15,7 +15,6 @@ def get_fifo_batches(item_code, warehouse, party, posting_date, posting_time):
 		where 
 			sle.item_code = %s 
 			and sle.warehouse = %s 
-			and (bt.expiry_date >= CURDATE() or bt.expiry_date IS NULL)
 			and se.party = %s
 			and concat(sle.posting_date, ' ', sle.posting_time) <= %s %s
 		group by sle.batch_no
@@ -28,22 +27,19 @@ def get_fifo_batches(item_code, warehouse, party, posting_date, posting_time):
 		from `tabBatch` as bt
 		join `tabStock Ledger Entry` as sle ignore index (item_code, warehouse) 
 		on (bt.batch_id = sle.batch_no)
-		JOIN `tabStock Entry` as se ON se.name = sle.voucher_no
 		where 
 			sle.item_code = %s 
-			and sle.warehouse = %s 
-			and (bt.expiry_date >= CURDATE() or bt.expiry_date IS NULL)
-			and se.party = %s
+			and sle.warehouse = %s
 		group by sle.batch_no
 		having sum(sle.actual_qty) > 0 
-		order by sle.posting_date, bt.name """, (item_code, warehouse, party), as_dict=True)
+		order by sle.posting_date, bt.name """, (item_code, warehouse), as_dict=True)
 
 	batches_nowdate_dict = {}
 	final_bacthes = []
 
 	for bt in batches_now_date:
 		batches_nowdate_dict.update({bt.batch_id:bt.qty})
-	
+		
 	for batch in batches:
 		if batches_nowdate_dict.get(batch.get('batch_id')):
 			if batch.get('qty') > batches_nowdate_dict[batch.get('batch_id')]:

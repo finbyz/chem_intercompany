@@ -359,7 +359,6 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 			batch_qty_dict_post = {}
 			batch_concentration_dict = {}
 			batches = get_fifo_batches(d.item_code, d.s_warehouse, party ,self.posting_date, self.posting_time)
-			
 			if not batches:
 				if not self.allow_short_qty_consumption:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse for party {}.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse),party)))
@@ -375,13 +374,17 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 					batch_qty_dict[batch] = round((flt(batch_qty_dict[batch]) - round(flt(qty),2)),2)
 			
 			concentration = d.concentration or 100
-			
 			remaining_quantity = round(flt(d.qty)*flt(concentration)/100,2)
+
 			i = 0
 			for batch, qty in batch_qty_dict.items():
 				if qty > 0:
 					concentration = flt(batch_concentration_dict[batch])
-					remaining_qty = round(flt(remaining_quantity*100 / concentration),2)
+					if maintain_as_is_stock:
+						remaining_qty = round(flt(remaining_quantity*100 / concentration),2)
+					else:
+						remaining_qty = round(flt(remaining_quantity),2)
+				
 					if i == 0:
 						if round(qty,2) >= round_down(remaining_qty,1):
 							d.batch_no = batch
@@ -432,25 +435,28 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 							if round(qty,2) >= round_down(remaining_qty,1):
 								x.batch_no = batch											
 								x.concentration = concentration
+							
 								x.qty = min(round(remaining_qty,2),round(qty,2))
 								if maintain_as_is_stock:
-									quantity = round(x.qty * concentration /100,2)
+									quantity = round((x.qty * concentration /100),2)
 								else:
 									quantity = x.qty									
 								batch_utilized[batch] = batch_utilized.get(batch,0) + remaining_qty
 								
 								flag = 1
 								break
-							
+
 							else:
 								x.batch_no = batch
 								x.qty = round(qty,2)
 								x.concentration = concentration
 								if maintain_as_is_stock:
-									quantity = round(x.qty * x.concentration /100,2)
+									quantity = round((x.qty * x.concentration /100),2)
+
 								else:
 									quantity = x.qty										
 								remaining_qty -= round(flt(qty),2)	
+
 								remaining_quantity -= round(flt(quantity),2)						
 								batch_utilized[batch] = batch_utilized.get(batch,0) + qty
 								
