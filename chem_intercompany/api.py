@@ -93,7 +93,11 @@ def get_challan_no(doctype, txt, searchfield, start, page_len, filters):
 	searchfield = meta.get_search_fields()
 
 	searchfields = " or ".join(["batch." + field + " like %(txt)s" for field in searchfield])
-	searchfields += " or sle.voucher_no = '{previous_sle}')".format(previous_sle=previous_sle.voucher_no)
+	try:
+		previous_sle_no = previous_sle['voucher_no']
+	except KeyError:
+		previous_sle_no = ''
+	searchfields += " or sle.voucher_no = '{previous_sle}'".format(previous_sle=previous_sle_no)
 	# searchfield_previous_sle = " or ".join(["""sle.voucher_no = '{previous_sle}'""".format(previous_sle=previous_sle.voucher_no)])
 	if filters.get("posting_date"):
 		cond = "and (batch.expiry_date is null or batch.expiry_date >= %(posting_date)s)"
@@ -122,7 +126,7 @@ def get_challan_no(doctype, txt, searchfield, start, page_len, filters):
 					sle.item_code = %(item_code)s
 					and sle.warehouse = %(warehouse)s
 					and batch.docstatus < 2
-					and (sle.batch_no like %(txt)s or {searchfields}
+					and (sle.batch_no like %(txt)s or {searchfields})
 					{0}
 					{match_conditions}
 				group by batch_no having sum(sle.actual_qty) > 0
