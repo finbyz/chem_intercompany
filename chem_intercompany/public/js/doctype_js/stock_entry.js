@@ -19,7 +19,6 @@ frappe.ui.form.on('Stock Entry', {
                 }
             }
         };
-        if (frm.doc.stock_entry_type == "Send Jobwork Finish"){
             frm.set_query("batch_no", "items", function (doc, cdt, cdn) {
                 let d = locals[cdt][cdn];
                 if (!d.item_code) {
@@ -40,7 +39,6 @@ frappe.ui.form.on('Stock Entry', {
                     }
                 }
             });
-        }
         if (frm.doc.docstatus == 0){
             frm.trigger('stock_entry_type')
         }  
