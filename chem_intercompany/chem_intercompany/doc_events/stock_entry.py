@@ -363,7 +363,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 			batch_concentration_dict = {}
 
 			batches = get_fifo_batches(d.item_code, d.s_warehouse, party ,self.posting_date, self.posting_time)
-			
+		
 			if not batches:
 				if not self.allow_short_qty_consumption:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse for party {}.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse),party)))
@@ -384,13 +384,17 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 			i = 0
 			
 			for batch, qty in batch_qty_dict.items():
+				# frappe.msgprint(str(batch) + " : " +str(qty))
 				if qty > 0:
 					concentration = flt(batch_concentration_dict[batch])
 					if maintain_as_is_stock:
 						remaining_qty = round(flt(remaining_quantity*100 / concentration),2)
 					else:
 						remaining_qty = round(flt(remaining_quantity),2)
-				
+
+					if remaining_qty == 0:
+						continue
+
 					if i == 0:
 						if qty >= remaining_qty:
 							d.batch_no = batch
@@ -490,11 +494,13 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 				to_remove.append(d)
 	
 	final_items = [i for i in items if 'batch_no' in i.keys()] 
-	
+	# frappe.msgprint(str(final_items))
 	for item in self.items:
 		if item not in to_remove:
 			final_items.append(item.__dict__)
 	
+	
 	self.items = []
 	self.extend('items', final_items)
-	
+	# for row in self.items:
+	# 	frappe.msgprint("Qty: " + str(row.qty) + " Batch: " + str(row.batch_no))
