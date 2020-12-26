@@ -122,8 +122,8 @@ def job_work_repack(self):
 		if not self.finish_item:
 			frappe.throw(_("Please define finish Item"))
 
-		# if not self.bom_no or not self.fg_completed_qty:
-		# 	frappe.throw(_("Please define Bom No and For Qty"))
+		if self.bom_no and not self.fg_completed_qty:
+			frappe.throw(_("Please define Bom No and For Qty"))
 		if not self.to_company_receive_warehouse:
 			frappe.throw(_("Please define To company warehouse"))
 		#create repack
@@ -281,6 +281,9 @@ def get_bom_items(self):
 			frappe.throw(_("Please define finish Item"))
 		job_work_in_warehouse = frappe.db.get_value('Company',self.company,'job_work_warehouse')
 		job_work_out_warehouse = frappe.db.get_value('Company',self.company,'job_work_out_warehouse')
+
+		if self.bom_no and not self.fg_completed_qty:
+			frappe.throw(_("Please define Bom No and For Qty"))
 
 		if self.bom_no:
 			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
