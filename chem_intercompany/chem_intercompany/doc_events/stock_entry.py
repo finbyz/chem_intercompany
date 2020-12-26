@@ -241,7 +241,9 @@ def job_work_repack(self):
 			})
 		
 		job_work_item_reset(se,job_work_out_warehouse,self.company)
+		
 		se.get_stock_and_rate()
+		
 		se.save(ignore_permissions=True)
 		se.submit()
 		
