@@ -49,8 +49,10 @@ def create_stock_entry(self):
 		se.series_value = int(self.jobwork_series_value)
 		if frappe.db.get_value("Company",self.company,'company_code') == frappe.db.get_value("Company",self.party,'company_code'):
 			se.naming_series = "STE.company_series./.fiscal./UII/.###"
+			se.jobwork_series = "STE.company_series./.fiscal./UII/.###"
 		else:
 			se.naming_series = "STE.company_series./.fiscal./AII/.###"
+			se.jobwork_series = "STE.company_series./.fiscal./AII/.###"
 		se.stock_entry_type = "Send to Jobwork"
 		se.purpose = "Material Transfer"
 		se.set_posting_time = 1
