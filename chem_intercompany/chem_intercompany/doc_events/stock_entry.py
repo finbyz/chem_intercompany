@@ -370,7 +370,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 				if not self.allow_short_qty_consumption:
 					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse for party {}.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse),party)))
 			for batch in batches:	
-				if batch.batch_id == d.batch_no or frappe.db.get_value("Batch",batch.batch_id,'lot_no') == d.lot_no:
+				if batch.batch_id == d.batch_no or batch.lot_no == d.lot_no:
 					batch_qty_dict.update({batch.batch_id:batch.qty})		
 				else:
 					batch_qty_dict_post.update({batch.batch_id:batch.qty})
