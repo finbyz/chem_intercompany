@@ -115,7 +115,8 @@ def create_job_work_receipt_entry(self):
 		self.db_set('jw_ref', se.name)
 		# frappe.flags.warehouse_account_map = None
 		self.jw_ref = se.name
-		se.submit()
+		if not draft_auto_entry:
+			se.submit()
 
 def job_work_repack(self):
 	if self.stock_entry_type == "Send Jobwork Finish" and self.purpose == "Material Issue" and self.send_to_party and self.party_type == "Company":
@@ -245,7 +246,8 @@ def job_work_repack(self):
 		se.get_stock_and_rate()
 		
 		se.save(ignore_permissions=True)
-		se.submit()
+		if not draft_auto_entry:
+			se.submit()
 		
 
 def cancel_job_work(self):
