@@ -115,7 +115,7 @@ def create_job_work_receipt_entry(self):
 		self.db_set('jw_ref', se.name)
 		# frappe.flags.warehouse_account_map = None
 		self.jw_ref = se.name
-		if not draft_auto_entry:
+		if not self.draft_auto_entry:
 			se.submit()
 
 def job_work_repack(self):
@@ -246,7 +246,7 @@ def job_work_repack(self):
 		se.get_stock_and_rate()
 		
 		se.save(ignore_permissions=True)
-		if not draft_auto_entry:
+		if not self.draft_auto_entry:
 			se.submit()
 		
 

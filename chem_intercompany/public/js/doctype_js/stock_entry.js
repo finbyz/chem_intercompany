@@ -41,7 +41,11 @@ frappe.ui.form.on('Stock Entry', {
             });
         if (frm.doc.docstatus == 0){
             frm.trigger('stock_entry_type')
-        }  
+        } 
+        if(frm.doc.party){
+            cur_frm.set_df_property("party_type", "read_only",1);
+            cur_frm.set_df_property("party", "read_only",1);
+        }
     },
     refresh: function(frm){
         if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0) {
@@ -57,6 +61,7 @@ frappe.ui.form.on('Stock Entry', {
     },
     validate: function (frm) { 
         console.log(frappe.utils.sum((frm.doc.items || []).map(row => row.qty)));
+        frm.set_value('total_qty',frappe.utils.sum((frm.doc.items || []).map(row => row.qty)))
         //frm.trigger('stock_entry_type')
     },
     
