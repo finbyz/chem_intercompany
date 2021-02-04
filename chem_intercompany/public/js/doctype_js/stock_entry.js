@@ -42,7 +42,7 @@ frappe.ui.form.on('Stock Entry', {
         if (frm.doc.docstatus == 0){
             frm.trigger('stock_entry_type')
         } 
-        if(frm.doc.party){
+        if(frm.doc.party && frm.doc.docstatus==1){
             cur_frm.set_df_property("party_type", "read_only",1);
             cur_frm.set_df_property("party", "read_only",1);
         }

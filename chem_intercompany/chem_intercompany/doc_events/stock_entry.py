@@ -493,7 +493,7 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 					i += 1
 			
 			else:
-				frappe.msgprint(str(remaining_quantity))
+				#frappe.msgprint(str(remaining_quantity))
 				if round_down(remaining_quantity,1):
 					if self.allow_short_qty_consumption:
 						frappe.msgprint(_("Sufficient quantity for item {} is not available in {} warehouse for party {}.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse), party)))
