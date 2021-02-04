@@ -43,7 +43,7 @@ def create_job_work_receipt_entry(self):
 		se.purpose = "Material Receipt"
 		se.set_posting_time = 1
 		se.jw_ref = self.name
-		se.posting_date = self.posting_date
+		se.posting_date = self.receive_posting_date or self.posting_date
 		se.posting_time = self.posting_time
 		se.company = self.party
 		se.receive_from_party = 1
@@ -136,7 +136,7 @@ def job_work_repack(self):
 		se.set_posting_time = 1
 		se.reference_doctype = self.doctype
 		se.reference_docname =self.name
-		se.posting_date = self.posting_date
+		se.posting_date = self.receive_posting_date or self.posting_date
 		se.posting_time = self.posting_time
 		se.company = self.party
 		se.receive_from_party = 1
