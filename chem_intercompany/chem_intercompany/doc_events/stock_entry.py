@@ -123,8 +123,8 @@ def job_work_repack(self):
 		if not self.finish_item:
 			frappe.throw(_("Please define finish Item"))
 
-		if self.bom_no and not self.fg_completed_qty:
-			frappe.throw(_("Please define Bom No and For Qty"))
+		if self.bom_no and not self.fg_completed_quantity:
+			frappe.throw(_("Please define Bom No and For Quantity"))
 		if not self.to_company_receive_warehouse:
 			frappe.throw(_("Please define To company warehouse"))
 		#create repack
@@ -155,7 +155,7 @@ def job_work_repack(self):
 
 		
 		if self.bom_no:
-			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
+			item_dict = self.get_bom_raw_materials(self.fg_completed_quantity)
 			for item in itervalues(item_dict):
 				item["from_warehouse"] = job_work_out_warehouse
 				item["quantity"] = item["qty"]
@@ -284,11 +284,14 @@ def get_bom_items(self):
 		job_work_in_warehouse = frappe.db.get_value('Company',self.company,'job_work_warehouse')
 		job_work_out_warehouse = frappe.db.get_value('Company',self.company,'job_work_out_warehouse')
 
-		if self.bom_no and not self.fg_completed_qty:
-			frappe.throw(_("Please define Bom No and For Qty"))
+		if self.bom_no:
+			if not self.fg_completed_qty:
+				frappe.throw(_("Please define For Qty"))
+			if not self.fg_completed_quantity:
+				frappe.throw(_("Please define For Quantity"))
 
 		if self.bom_no:
-			item_dict = self.get_bom_raw_materials(self.fg_completed_qty)
+			item_dict = self.get_bom_raw_materials(self.fg_completed_quantity)
 			for item in itervalues(item_dict):
 				item["from_warehouse"] = job_work_out_warehouse
 				item["quantity"] = item["qty"]
@@ -299,7 +302,8 @@ def get_bom_items(self):
 				self.append("items",{
 					'item_code': item.item_code,
 					's_warehouse': job_work_out_warehouse,
-					'qty': item.fg_completed_qty,
+					'qty': self.fg_completed_qty,
+					'quantity': self.fg_completed_quantity,
 					'short_quantity':item.short_quantity,
 					'basic_rate':item.basic_rate,
 					'basic_amount':item.basic_amount,
@@ -326,7 +330,7 @@ def get_bom_items(self):
 			'item_code': self.finish_item,
 			't_warehouse': self.to_company_receive_warehouse or job_work_in_warehouse,
 			'qty': self.fg_completed_qty,
-			'quantity': self.fg_completed_quantity or self.fg_completed_qty,
+			'quantity': self.fg_completed_quantity,
 			'uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
 			'stock_uom': frappe.db.get_value("Item",self.finish_item,'stock_uom'),
 			'conversion_factor': 1,

@@ -165,6 +165,16 @@ frappe.ui.form.on('Stock Entry', {
                // console.log(r.message)
             }
         });
+    },
+    set_quantity_qty: function(frm){
+        var quantity = 0
+        var qty = 0
+        frm.doc.items.forEach(function (d){
+            quantity += d.quantity
+            qty += d.qty
+        })
+        frm.set_value("fg_completed_qty", qty);
+        frm.set_value("fg_completed_quantity", quantity);
     }
 });
 
@@ -174,5 +184,10 @@ frappe.ui.form.on("Stock Entry Detail", {
     },
     item_code: function(frm,cdt,cdn){
         frm.events.stock_entry_type(frm)
+    },
+    quantity: function(frm){
+        if (frm.doc.from_bom){
+            frm.events.set_quantity_qty(frm)
+        }
     }
 });
