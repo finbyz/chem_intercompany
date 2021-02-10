@@ -1,11 +1,21 @@
 import frappe
 from frappe import msgprint, _
 from frappe.utils import flt
-from datetime import timedelta
+from datetime import timedelta, datetime
 from chem_intercompany.controllers.batch_controller import  get_fifo_batches, get_qty_from_sle
 from six import itervalues
 import json
 import math
+
+def validate(self,method):
+	validate_date(self)
+	
+def validate_date(self):
+	if self.receive_posting_date:
+		posting_date = datetime.strptime(self.posting_date, '%Y-%m-%d').date()
+		receive_posting_date = datetime.strptime(self.receive_posting_date, '%Y-%m-%d').date()
+		if receive_posting_date < posting_date:
+			frappe.throw("Receive posting date should be greater than posting date")
 
 def round_down(n, decimals=0):
     multiplier = 10 ** decimals
