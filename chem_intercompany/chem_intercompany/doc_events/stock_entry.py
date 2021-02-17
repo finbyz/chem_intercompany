@@ -9,6 +9,7 @@ import math
 
 def validate(self,method):
 	validate_date(self)
+	set_receive_send_quantity(self)
 	
 def validate_date(self):
 	if self.receive_posting_date:
@@ -16,6 +17,17 @@ def validate_date(self):
 		receive_posting_date = datetime.strptime(self.receive_posting_date, '%Y-%m-%d').date()
 		if receive_posting_date < posting_date:
 			frappe.throw("Receive posting date should be greater than posting date")
+
+def set_receive_send_quantity(self):
+	receive_quantity = 0
+	send_quantity = 0
+	for item in self.items:
+		if item.s_warehouse:
+			receive_quantity += item.quantity
+		if item.t_warehouse:
+			send_quantity += item.quantity
+	self.receive_quantity = receive_quantity
+	self.send_quantity = send_quantity
 
 def round_down(n, decimals=0):
     multiplier = 10 ** decimals

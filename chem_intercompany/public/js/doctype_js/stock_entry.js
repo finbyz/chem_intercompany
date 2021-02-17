@@ -167,14 +167,18 @@ frappe.ui.form.on('Stock Entry', {
         });
     },
     set_quantity_qty: function(frm){
-        var quantity = 0
-        var qty = 0
+        var receive_quantity = 0
+        var send_quantity = 0
         frm.doc.items.forEach(function (d){
-            quantity += d.quantity
-            qty += d.qty
+            if(d.s_warehouse){
+                receive_quantity += d.quantity
+            }
+            if(d.t_warehouse){
+                send_quantity += d.quantity
+            }
         })
-        frm.set_value("fg_completed_qty", qty);
-        frm.set_value("fg_completed_quantity", quantity);
+        frm.set_value("receive_quantity", receive_quantity);
+        frm.set_value("send_quantity", send_quantity);
     }
 });
 
