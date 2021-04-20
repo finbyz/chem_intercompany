@@ -166,6 +166,20 @@ frappe.ui.form.on('Stock Entry', {
             }
         });
     },
+    set_quantity_qty: function(frm){
+        var receive_quantity = 0
+        var send_quantity = 0
+        frm.doc.items.forEach(function (d){
+            if(d.s_warehouse){
+                receive_quantity += d.quantity
+            }
+            if(d.t_warehouse){
+                send_quantity += d.quantity
+            }
+        })
+        frm.set_value("receive_quantity", receive_quantity);
+        frm.set_value("send_quantity", send_quantity);
+    }
 });
 
 frappe.ui.form.on("Stock Entry Detail", {

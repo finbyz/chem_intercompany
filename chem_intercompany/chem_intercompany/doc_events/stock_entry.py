@@ -9,6 +9,7 @@ import math
 
 def validate(self,method):
 	validate_date(self)
+	set_receive_send_quantity(self)
 	
 def validate_date(self):
 	if self.receive_posting_date:
@@ -16,6 +17,17 @@ def validate_date(self):
 		receive_posting_date = datetime.strptime(self.receive_posting_date, '%Y-%m-%d').date()
 		if receive_posting_date < posting_date:
 			frappe.throw("Receive posting date should be greater than posting date")
+
+def set_receive_send_quantity(self):
+	receive_quantity = 0
+	send_quantity = 0
+	for item in self.items:
+		if item.s_warehouse:
+			receive_quantity += item.quantity
+		if item.t_warehouse:
+			send_quantity += item.quantity
+	self.receive_quantity = receive_quantity
+	self.send_quantity = send_quantity
 
 def round_down(n, decimals=0):
 	multiplier = 10 ** decimals
@@ -398,7 +410,15 @@ def job_work_item_reset(self,job_work_out_warehouse,party):
 			for batch, qty in batch_utilized.items():
 				if batch_qty_dict.get(batch):
 					batch_qty_dict[batch] = (flt(batch_qty_dict[batch]) - flt(qty))
-			
+					if batch_qty_dict[batch] == 0:
+						batch_qty_dict.pop(batch)
+
+			if batch_qty_dict == {}:
+				if not self.allow_short_qty_consumption:
+					frappe.throw(_("Sufficient quantity for item {} is not available in {} warehouse for party {}.".format(frappe.bold(d.item_code), frappe.bold(d.s_warehouse),party)))
+				else:
+					to_remove.append(d)
+												
 			concentration = d.concentration or 100
 			if maintain_as_is_stock:	
 				remaining_quantity = round(flt(d.qty)*flt(concentration)/100,2)
