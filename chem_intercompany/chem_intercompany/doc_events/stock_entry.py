@@ -18,10 +18,10 @@ def validate_date(self):
 			frappe.throw("Receive posting date should be greater than posting date")
 
 def round_down(n, decimals=0):
-    multiplier = 10 ** decimals
-    return math.floor(n * multiplier) / multiplier
+	multiplier = 10 ** decimals
+	return math.floor(n * multiplier) / multiplier
 
-def on_submit(self,method):
+def on_submit(self,method):	
 	create_job_work_receipt_entry(self)
 	job_work_repack(self)
 
