@@ -189,9 +189,5 @@ frappe.ui.form.on("Stock Entry Detail", {
     item_code: function(frm,cdt,cdn){
         frm.events.stock_entry_type(frm)
     },
-    quantity: function(frm){
-        if (frm.doc.from_bom){
-            frm.events.set_quantity_qty(frm)
-        }
-    }
+
 });
