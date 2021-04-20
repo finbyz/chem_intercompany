@@ -10,7 +10,14 @@ import math
 def validate(self,method):
 	validate_date(self)
 	set_receive_send_quantity(self)
+	set_qty(self)
 	
+
+def set_qty(self):
+	for row in self.items:
+		if row.t_warehouse and row.receive_quantity and row.supplier_quantity:
+			row.short_quantity = abs(row.receive_quantity - row.supplier_quantity)
+
 def validate_date(self):
 	if self.receive_posting_date:
 		posting_date = datetime.strptime(self.posting_date, '%Y-%m-%d').date()
